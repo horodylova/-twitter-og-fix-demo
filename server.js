@@ -6,154 +6,126 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const generator = new StaticHTMLGenerator();
 
-app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.use(express.static('public'));
-app.use('/static-pages', express.static(path.join(__dirname, 'public/static-pages')));
+app.use(express.json());
 
-app.get('/post', (req, res) => {
-  const staticFile = path.join(__dirname, 'public/static-pages/post.html');
-  
-  res.sendFile(staticFile, (err) => {
-    if (err) {
-      res.send(`
-        <h1>Page Not Found</h1>
-        <p>Create the page first:</p>
-        <a href="/">Create Page</a>
-      `);
-    }
-  });
+app.get('/post', async (req, res) => {
+  try {
+    const generator = new StaticHTMLGenerator();
+    const result = await generator.generatePost();
+    res.send(result.html);
+  } catch (error) {
+    console.error('Error generating post:', error);
+    res.status(500).send('Error generating page');
+  }
 });
 
 app.post('/api/create-post', async (req, res) => {
   try {
+    const generator = new StaticHTMLGenerator();
     const result = await generator.generatePost();
-    
-    res.json({
-      success: true,
-      url: result.url,
-      message: 'Page created successfully!'
-    });
-    
+    res.json(result);
   } catch (error) {
-    console.error('Page creation error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    console.error('Error creating post:', error);
+    res.status(500).json({ error: 'Failed to create post' });
   }
 });
 
 app.get('/', (req, res) => {
+  const baseUrl = process.env.BASE_URL || 
+                  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                  `http://localhost:${PORT}`;
+  
   res.send(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Twitter OG Demo</title>
-      <style>
-        body { 
-          font-family: Arial, sans-serif; 
-          max-width: 500px; 
-          margin: 50px auto; 
-          padding: 20px;
-          text-align: center;
-          background: #f5f5f5;
-        }
-        .container {
-          background: white;
-          padding: 40px;
-          border-radius: 15px;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        h1 { color: #333; margin-bottom: 30px; }
-        .create-btn { 
-          background: #1da1f2; 
-          color: white; 
-          padding: 15px 30px; 
-          border: none; 
-          border-radius: 25px; 
-          font-size: 16px; 
-          font-weight: bold;
-          cursor: pointer; 
-          margin: 20px 0;
-        }
-        .create-btn:hover { background: #0d8bd9; }
-        .create-btn:disabled { background: #ccc; cursor: not-allowed; }
-        .result { margin: 20px 0; padding: 15px; border-radius: 8px; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .twitter-btn {
-          background: #1da1f2;
-          color: white;
-          padding: 10px 20px;
-          border: none;
-          border-radius: 20px;
-          margin: 10px;
-          cursor: pointer;
-          text-decoration: none;
-          display: inline-block;
-        }
-      </style>
+        <title>🐦 Twitter Card Demo</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                max-width: 600px; 
+                margin: 50px auto; 
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            .container {
+                background: white;
+                padding: 40px;
+                border-radius: 20px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                text-align: center;
+            }
+            h1 { color: #333; margin-bottom: 10px; }
+            p { color: #666; margin-bottom: 30px; }
+            button {
+                background: #1da1f2;
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 50px;
+                font-size: 16px;
+                cursor: pointer;
+                margin: 10px;
+            }
+            button:hover { background: #0d8bd9; }
+            .result {
+                margin-top: 20px;
+                padding: 15px;
+                border-radius: 10px;
+                display: none;
+            }
+            .success { background: #d4edda; color: #155724; }
+            .error { background: #f8d7da; color: #721c24; }
+        </style>
     </head>
     <body>
-      <div class="container">
-        <h1>🐦 Twitter Card Demo</h1>
-        <p>Create a page with your image for Twitter sharing</p>
-        
-        <button onclick="createPost()" id="createBtn" class="create-btn">
-          Create Page
-        </button>
-        
-        <div id="result"></div>
-      </div>
-      
-      <script>
-        async function createPost() {
-          const btn = document.getElementById('createBtn');
-          btn.disabled = true;
-          btn.textContent = 'Creating...';
-          
-          try {
-            const response = await fetch('/api/create-post', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            });
+        <div class="container">
+            <h1>🐦 Twitter Card Demo</h1>
+            <p>Create a page with your image for Twitter sharing</p>
             
-            const data = await response.json();
+            <button onclick="createPage()">Create Page</button>
             
-            if (data.success) {
-              document.getElementById('result').innerHTML = \`
-                <div class="result success">
-                  <h3>✅ Page Created!</h3>
-                  <p><a href="\${data.url}" target="_blank">View Page</a></p>
-                  <a href="https://twitter.com/intent/tweet?text=\${encodeURIComponent('Check out this amazing offer!')}&url=\${encodeURIComponent(data.url)}" target="_blank" class="twitter-btn">
-                    🐦 Share on Twitter
-                  </a>
-                </div>
-              \`;
-            } else {
-              throw new Error(data.error);
-            }
-          } catch (error) {
-            document.getElementById('result').innerHTML = \`
-              <div class="result error">
-                <h3>❌ Error</h3>
-                <p>\${error.message}</p>
-              </div>
-            \`;
-          } finally {
-            btn.disabled = false;
-            btn.textContent = 'Create Page';
-          }
-        }
-      </script>
+            <div id="result" class="result"></div>
+            
+            <script>
+                async function createPage() {
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result';
+                    resultDiv.innerHTML = 'Creating page...';
+                    
+                    try {
+                        const response = await fetch('/api/create-post', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            resultDiv.className = 'result success';
+                            resultDiv.innerHTML = \`
+                                ✅ Page created successfully!<br>
+                                <a href="\${data.url}" target="_blank">View Page</a> | 
+                                <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
+                            \`;
+                        } else {
+                            throw new Error('Failed to create page');
+                        }
+                    } catch (error) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = '❌ Error: ' + error.message;
+                    }
+                }
+            </script>
+        </div>
     </body>
     </html>
   `);
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

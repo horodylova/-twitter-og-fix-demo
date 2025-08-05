@@ -3,7 +3,6 @@ const path = require('path');
 
 class StaticHTMLGenerator {
   constructor() {
-    this.outputDir = process.env.STATIC_PAGES_DIR || './public/static-pages';
     this.baseUrl = process.env.BASE_URL || 
                    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
                    'http://localhost:3000';
@@ -14,12 +13,8 @@ class StaticHTMLGenerator {
     const pageData = this.getPageData();
     const html = this.buildHTML(pageData);
     
-    const filePath = path.join(this.outputDir, 'post.html');
-    await this.ensureDirectoryExists(path.dirname(filePath));
-    await fs.writeFile(filePath, html, 'utf8');
-    
     return {
-      filePath,
+      html,
       url: `${this.baseUrl}/post`,
       success: true
     };
@@ -136,14 +131,6 @@ class StaticHTMLGenerator {
   </div>
 </body>
 </html>`;
-  }
-
-  async ensureDirectoryExists(dirPath) {
-    try {
-      await fs.mkdir(dirPath, { recursive: true });
-    } catch (error) {
-      if (error.code !== 'EEXIST') throw error;
-    }
   }
 }
 
