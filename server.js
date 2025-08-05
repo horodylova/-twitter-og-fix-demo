@@ -7,7 +7,27 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use((req, res, next) => {
+  res.setHeader('X-Robots-Tag', 'index, follow');
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
+
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+  maxAge: '1d', 
+  setHeaders: (res, path) => {
+    if (path.endsWith('.png')) {
+      res.set('Content-Type', 'image/png');
+    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.set('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.gif')) {
+      res.set('Content-Type', 'image/gif');
+    }
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
+
 app.use(express.static('public'));
 app.use(express.json());
 
@@ -15,6 +35,10 @@ app.get('/post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generatePost();
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=300'); 
+    
     res.send(result.html);
   } catch (error) {
     console.error('Error generating post:', error);
@@ -33,6 +57,19 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
+app.get('/test-image', (req, res) => {
+  const baseUrl = process.env.BASE_URL || 
+                  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                  `http://localhost:${PORT}`;
+  const imageUrl = `${baseUrl}/images/1.png`;
+  
+  res.json({
+    imageUrl,
+    timestamp: new Date().toISOString(),
+    message: 'Test this URL directly in browser'
+  });
+});
+
 app.get('/', (req, res) => {
   const baseUrl = process.env.BASE_URL || 
                   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
@@ -43,6 +80,8 @@ app.get('/', (req, res) => {
     <html>
     <head>
         <title>🐦 Twitter Card Demo</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -79,6 +118,15 @@ app.get('/', (req, res) => {
             }
             .success { background: #d4edda; color: #155724; }
             .error { background: #f8d7da; color: #721c24; }
+            .debug {
+                background: #e2e3e5;
+                color: #383d41;
+                text-align: left;
+                font-family: monospace;
+                font-size: 12px;
+                white-space: pre-wrap;
+                margin-top: 10px;
+            }
         </style>
     </head>
     <body>
@@ -87,6 +135,7 @@ app.get('/', (req, res) => {
             <p>Create a page with your image for Twitter sharing</p>
             
             <button onclick="createPage()">Create Page</button>
+            <button onclick="testImage()">Test Image URL</button>
             
             <div id="result" class="result"></div>
             
@@ -109,6 +158,7 @@ app.get('/', (req, res) => {
                             resultDiv.innerHTML = \`
                                 ✅ Page created successfully!<br>
                                 <a href="\${data.url}" target="_blank">View Page</a> | 
+                                <a href="https://cards-dev.twitter.com/validator" target="_blank">Test in Twitter Validator</a><br>
                                 <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
                             \`;
                         } else {
@@ -117,6 +167,28 @@ app.get('/', (req, res) => {
                     } catch (error) {
                         resultDiv.className = 'result error';
                         resultDiv.innerHTML = '❌ Error: ' + error.message;
+                    }
+                }
+                
+                async function testImage() {
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result';
+                    resultDiv.innerHTML = 'Testing image...';
+                    
+                    try {
+                        const response = await fetch('/test-image');
+                        const data = await response.json();
+                        
+                        resultDiv.className = 'result debug';
+                        resultDiv.innerHTML = \`Image URL: \${data.imageUrl}
+Time: \${data.timestamp}
+
+Test this URL directly in your browser:
+<a href="\${data.imageUrl}" target="_blank">\${data.imageUrl}</a>\`;
+                    } catch (error) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = '❌ Error testing image: ' + error.message;
                     }
                 }
             </script>
