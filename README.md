@@ -124,7 +124,9 @@ Supported Platforms
 ✅ Telegram - Instant preview support
 
 Meta Tags Implementation
-html<!-- Open Graph -->
+
+#bash
+<!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Your Title">
 <meta property="og:description" content="Your Description">
@@ -135,6 +137,9 @@ html<!-- Open Graph -->
 <meta name="twitter:title" content="Your Title">
 <meta name="twitter:description" content="Your Description">
 <meta name="twitter:image" content="https://yourdomain.com/images/1.png">
+
+#bash
+
 🎯 Performance Features
 
 Image Optimization: Proper MIME types and caching headers
