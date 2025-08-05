@@ -4,7 +4,9 @@ const path = require('path');
 class StaticHTMLGenerator {
   constructor() {
     this.outputDir = process.env.STATIC_PAGES_DIR || './public/static-pages';
-    this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    this.baseUrl = process.env.BASE_URL || 
+                   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                   'http://localhost:3000';
     this.imageUrl = `${this.baseUrl}/images/1.png`;
   }
 
