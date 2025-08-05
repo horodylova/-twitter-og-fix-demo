@@ -1,32 +1,35 @@
-🐦 Twitter Cards Generator
+# 🐦 Twitter Cards Generator
 
 A dynamic web application that generates optimized social media preview pages with Twitter Cards integration for maximum engagement and professional sharing.
 
-✨ Features
+## ✨ Features
 
-🎯 Dynamic HTML Generation - Real-time page creation with customizable content
-🏷️ Twitter Cards Integration - Proper Open Graph and Twitter meta tags
-📱 Responsive Design - Modern UI with gradient backgrounds and smooth animations
-🚀 API-First Architecture - RESTful endpoints for seamless integration
-🖼️ Image Optimization - Proper MIME types and social media crawler headers
-⚡ Performance Optimized - Smart caching and static file serving
-🔗 Social Sharing Ready - Direct Twitter intent integration
+- 🎯 **Dynamic HTML Generation** - Real-time page creation with customizable content
+- 🏷️ **Twitter Cards Integration** - Proper Open Graph and Twitter meta tags
+- 📱 **Responsive Design** - Modern UI with gradient backgrounds and smooth animations
+- 🚀 **API-First Architecture** - RESTful endpoints for seamless integration
+- 🖼️ **Image Optimization** - Proper MIME types and social media crawler headers
+- ⚡ **Performance Optimized** - Smart caching and static file serving
+- 🔗 **Social Sharing Ready** - Direct Twitter intent integration
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 
-Backend: Node.js, Express.js
-Frontend: HTML5, CSS3, Vanilla JavaScript
-Deployment: Vercel
-Social Integration: Open Graph Protocol, Twitter Cards API
+- **Backend:** Node.js, Express.js
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript
+- **Deployment:** Vercel
+- **Social Integration:** Open Graph Protocol, Twitter Cards API
 
-🚀 Quick Start
-Prerequisites
+## 🚀 Quick Start
 
-Node.js (≥14.0.0)
-npm or yarn
+### Prerequisites
 
-Installation
-bash# Clone the repository
+- Node.js (≥14.0.0)
+- npm or yarn
+
+### Installation
+
+```bash
+# Clone the repository
 git clone https://github.com/yourusername/twitter-cards-generator.git
 cd twitter-cards-generator
 
@@ -38,31 +41,57 @@ cp .env.example .env
 
 # Start development server
 npm run dev
-Environment Variables
-envPORT=3000
+```
+
+### Environment Variables
+
+```env
+PORT=3000
 BASE_URL=https://yourdomain.com
 VERCEL_URL=your-project.vercel.app
-📋 API Reference
-Generate New Post
-httpPOST /api/create-post
-Response:
-json{
+```
+
+## 📋 API Reference
+
+### Generate New Post
+
+```http
+POST /api/create-post
+```
+
+**Response:**
+```json
+{
   "html": "<generated-html>",
   "url": "https://yourdomain.com/post",
   "success": true
 }
-View Generated Post
-httpGET /post
+```
+
+### View Generated Post
+
+```http
+GET /post
+```
+
 Returns the generated HTML page with proper Twitter Cards meta tags.
-Test Image URL
-httpGET /test-image
-Response:
-json{
+
+### Test Image URL
+
+```http
+GET /test-image
+```
+
+**Response:**
+```json
+{
   "imageUrl": "https://yourdomain.com/images/1.png",
   "timestamp": "2025-01-15T10:30:00.000Z",
   "message": "Test this URL directly in browser"
 }
-🏗️ Project Structure
+```
+
+## 🏗️ Project Structure
 twitter-cards-generator/
 ├── 📁 public/
 │   └── 📁 images/
