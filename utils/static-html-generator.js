@@ -3,9 +3,7 @@ const path = require('path');
 
 class StaticHTMLGenerator {
   constructor() {
-    this.baseUrl = process.env.BASE_URL ||
-                   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
-                   'http://localhost:3000';
+    this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     this.imageUrl = `${this.baseUrl}/images/1.png`;
   }
 
@@ -32,47 +30,28 @@ class StaticHTMLGenerator {
   }
 
   buildHTML(data) {
-    // Экранируем специальные символы для безопасности
-    const escapeHtml = (str) => {
-      return str.replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-    };
-
-    const safeTitle = escapeHtml(data.title);
-    const safeDescription = escapeHtml(data.description);
-
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
-  <!-- Базовые мета-теги -->
-  <title>${safeTitle}</title>
-  <meta name="description" content="${safeDescription}">
+  <title>${data.title}</title>
+  <meta name="description" content="${data.description}">
   
-  <!-- Open Graph мета-теги (обязательные) -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="${data.pageUrl}">
-  <meta property="og:title" content="${safeTitle}">
-  <meta property="og:description" content="${safeDescription}">
+  <meta property="og:title" content="${data.title}">
+  <meta property="og:description" content="${data.description}">
   <meta property="og:image" content="${data.imageUrl}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Special Offers">
   
-  <!-- Twitter Card мета-теги -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${safeTitle}">
-  <meta name="twitter:description" content="${safeDescription}">
+  <meta name="twitter:title" content="${data.title}">
+  <meta name="twitter:description" content="${data.description}">
   <meta name="twitter:image" content="${data.imageUrl}">
-  
-  <!-- Дополнительная совместимость -->
-  <meta property="og:locale" content="en_US">
-  <meta name="robots" content="index, follow">
   
   <style>
     body {
@@ -145,9 +124,9 @@ class StaticHTMLGenerator {
 <body>
   <div class="container">
     <div class="badge">✅ Limited Offer</div>
-    <h1>${safeTitle}</h1>
-    <img src="${data.imageUrl}" alt="${safeTitle}" class="hero-image">
-    <p class="description">${safeDescription}</p>
+    <h1>${data.title}</h1>
+    <img src="${data.imageUrl}" alt="${data.title}" class="hero-image">
+    <p class="description">${data.description}</p>
     <a href="#" class="cta-button">Get Started Now</a>
   </div>
 </body>
