@@ -3,8 +3,8 @@ const path = require('path');
 
 class StaticHTMLGenerator {
   constructor() {
-    this.baseUrl = process.env.BASE_URL || 
-                   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+    this.baseUrl = process.env.BASE_URL ||
+                   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
                    'http://localhost:3000';
     this.imageUrl = `${this.baseUrl}/images/1.png`;
   }
@@ -41,17 +41,30 @@ class StaticHTMLGenerator {
   <title>${data.title}</title>
   <meta name="description" content="${data.description}" />
   
+  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${data.pageUrl}" />
   <meta property="og:title" content="${data.title}" />
   <meta property="og:description" content="${data.description}" />
   <meta property="og:image" content="${data.imageUrl}" />
+  <meta property="og:image:secure_url" content="${data.imageUrl}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="${data.title}" />
   <meta property="og:site_name" content="Special Offers" />
   
+  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@yourhandle" />
+  <meta name="twitter:creator" content="@yourhandle" />
   <meta name="twitter:title" content="${data.title}" />
   <meta name="twitter:description" content="${data.description}" />
   <meta name="twitter:image" content="${data.imageUrl}" />
+  <meta name="twitter:image:alt" content="${data.title}" />
+  
+  <!-- Additional meta tags for better compatibility -->
+  <meta property="twitter:domain" content="${new URL(data.pageUrl).hostname}" />
+  <meta property="twitter:url" content="${data.pageUrl}" />
   
   <style>
     body {
