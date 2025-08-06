@@ -7,6 +7,7 @@ class StaticHTMLGenerator {
     this.slug = options.slug || null;
     this.username = options.username || null;
     this.imageId = options.imageId || '1';
+    this.timestamp = options.timestamp || Date.now();
   }
 
   getDynamicImageUrl() {
@@ -40,6 +41,7 @@ class StaticHTMLGenerator {
         slug: this.slug,
         username: this.username,
         imageId: this.imageId,
+        timestamp: this.timestamp,
         url: this.generateDynamicUrl(),
         success: true
       };
@@ -57,6 +59,7 @@ class StaticHTMLGenerator {
       this.slug = randomSlug;
       this.username = randomUsername;
       this.imageId = randomImageId.toString();
+      this.timestamp = Date.now();
       
       return await this.generatePost();
     } catch (error) {
@@ -90,14 +93,13 @@ class StaticHTMLGenerator {
   getPageData() {
     const pageUrl = this.generateDynamicUrl();
     const imageUrl = this.getDynamicImageUrl();
-    const timestamp = Date.now();
     
     return {
       title: 'Special Offer - Limited Time',
       description: 'Amazing opportunity just for you! Get exclusive access to our premium service.',
-      imageUrl: `${imageUrl}?v=${timestamp}`,
+      imageUrl,
       pageUrl,
-      timestamp
+      timestamp: this.timestamp
     };
   }
 
@@ -107,9 +109,6 @@ class StaticHTMLGenerator {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   
   <title>${data.title}</title>
   <meta name="description" content="${data.description}">
@@ -127,7 +126,6 @@ class StaticHTMLGenerator {
   <meta property="og:image:alt" content="${data.title}">
   <meta property="og:site_name" content="Special Offers">
   <meta property="og:locale" content="en_US">
-  <meta property="og:updated_time" content="${new Date().toISOString()}">
   
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@yoursite">
@@ -211,7 +209,7 @@ class StaticHTMLGenerator {
   <div class="container">
     <div class="badge">✅ Limited Offer</div>
     <h1>${data.title}</h1>
-    <img src="${data.imageUrl.split('?')[0]}" alt="${data.title}" class="hero-image">
+    <img src="${data.imageUrl}" alt="${data.title}" class="hero-image">
     <p class="description">${data.description}</p>
     <a href="#" class="cta-button">Get Started Now</a>
   </div>
