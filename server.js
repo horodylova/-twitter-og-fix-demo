@@ -7,15 +7,42 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
+// Middleware для правильных заголовков
+app.use((req, res, next) => {
+  // Убираем заголовки, которые могут мешать краулерам
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
+// Статические файлы с правильными заголовками
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.png')) {
+      res.set('Content-Type', 'image/png');
+    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.set('Content-Type', 'image/jpeg');
+    }
+    res.set('Cache-Control', 'public, max-age=86400'); // 24 часа
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
+
 app.use(express.static('public'));
 app.use(express.json());
 
+// Статический пост (старый роут)
 app.get('/post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generatePost();
-    res.set('Content-Type', 'text/html');
+    
+    // Правильные заголовки для HTML
+    res.set({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=300', // 5 минут
+      'X-Robots-Tag': 'index, follow'
+    });
+    
     res.send(result.html);
   } catch (error) {
     console.error('Error generating post:', error);
@@ -23,12 +50,26 @@ app.get('/post', async (req, res) => {
   }
 });
 
+// Динамический пост
 app.get('/post/:slug/:username/:imageId', async (req, res) => {
   try {
     const { slug, username, imageId } = req.params;
+    
+    // Валидация параметров
+    if (!slug || !username || !imageId) {
+      return res.status(400).send('Missing required parameters');
+    }
+    
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateDynamicPost(slug, username, imageId);
-    res.set('Content-Type', 'text/html');
+    
+    // Правильные заголовки для HTML
+    res.set({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=300', // 5 минут
+      'X-Robots-Tag': 'index, follow'
+    });
+    
     res.send(result.html);
   } catch (error) {
     console.error('Error generating dynamic post:', error);
@@ -36,10 +77,13 @@ app.get('/post/:slug/:username/:imageId', async (req, res) => {
   }
 });
 
+// API для создания нового поста
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
+    
+    res.set('Content-Type', 'application/json; charset=utf-8');
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
@@ -47,13 +91,35 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+// Тестовый роут для проверки изображений
+app.get('/api/test-image/:id?', (req, res) => {
+  const imageId = req.params.id || '1';
+  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                  process.env.BASE_URL || `http://localhost:${PORT}`;
   
+  const imageIndex = parseInt(imageId) % 3 + 1;
+  const imageUrl = `${baseUrl}/images/${imageIndex}.png`;
+  
+  res.json({
+    imageUrl,
+    imageIndex,
+    baseUrl,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Главная страница
+app.get('/', (req, res) => {
+  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                  process.env.BASE_URL || `http://localhost:${PORT}`;
+  
+  res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(`
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>🐦 Twitter Card Demo</title>
         <style>
             body { 
@@ -81,6 +147,7 @@ app.get('/', (req, res) => {
                 font-size: 16px;
                 cursor: pointer;
                 margin: 10px;
+                transition: background-color 0.2s;
             }
             button:hover { background: #0d8bd9; }
             .result {
@@ -88,17 +155,20 @@ app.get('/', (req, res) => {
                 padding: 15px;
                 border-radius: 10px;
                 display: none;
+                text-align: left;
             }
             .success { background: #d4edda; color: #155724; }
             .error { background: #f8d7da; color: #721c24; }
+            .info { background: #d1ecf1; color: #0c5460; }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>🐦 Twitter Card Demo</h1>
-            <p>Create a page with your image for Twitter sharing</p>
+            <h1>🐦 Twitter Card Generator</h1>
+            <p>Create dynamic pages with unique URLs for Twitter sharing</p>
             
-            <button onclick="createPage()">Create Page</button>
+            <button onclick="createPage()">Create Dynamic Page</button>
+            <button onclick="testImages()">Test Images</button>
             
             <div id="result" class="result"></div>
             
@@ -106,8 +176,8 @@ app.get('/', (req, res) => {
                 async function createPage() {
                     const resultDiv = document.getElementById('result');
                     resultDiv.style.display = 'block';
-                    resultDiv.className = 'result';
-                    resultDiv.innerHTML = 'Creating page...';
+                    resultDiv.className = 'result info';
+                    resultDiv.innerHTML = 'Creating dynamic page...';
                     
                     try {
                         const response = await fetch('/api/create-post', {
@@ -119,9 +189,12 @@ app.get('/', (req, res) => {
                             const data = await response.json();
                             resultDiv.className = 'result success';
                             resultDiv.innerHTML = \`
-                                ✅ Page created successfully!<br>
-                                <a href="\${data.url}" target="_blank">View Page</a> | 
-                                <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
+                                <strong>✅ Dynamic page created!</strong><br><br>
+                                <strong>URL:</strong> <a href="\${data.url}" target="_blank">\${data.url}</a><br><br>
+                                <strong>Test links:</strong><br>
+                                • <a href="https://cards-dev.twitter.com/validator" target="_blank">Twitter Card Validator</a><br>
+                                • <a href="https://developers.facebook.com/tools/debug/" target="_blank">Facebook Debugger</a><br>
+                                • <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
                             \`;
                         } else {
                             throw new Error('Failed to create page');
@@ -129,6 +202,35 @@ app.get('/', (req, res) => {
                     } catch (error) {
                         resultDiv.className = 'result error';
                         resultDiv.innerHTML = '❌ Error: ' + error.message;
+                    }
+                }
+                
+                async function testImages() {
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result info';
+                    resultDiv.innerHTML = 'Testing image URLs...';
+                    
+                    try {
+                        const responses = await Promise.all([
+                            fetch('/api/test-image/1'),
+                            fetch('/api/test-image/2'),
+                            fetch('/api/test-image/3')
+                        ]);
+                        
+                        const data = await Promise.all(responses.map(r => r.json()));
+                        
+                        resultDiv.className = 'result info';
+                        resultDiv.innerHTML = \`
+                            <strong>📸 Image Test Results:</strong><br><br>
+                            \${data.map((item, index) => 
+                                \`<strong>Image \${index + 1}:</strong> <a href="\${item.imageUrl}" target="_blank">\${item.imageUrl}</a><br>\`
+                            ).join('')}
+                            <br><small>Click links to verify images load correctly</small>
+                        \`;
+                    } catch (error) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = '❌ Error testing images: ' + error.message;
                     }
                 }
             </script>
@@ -140,4 +242,5 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Base URL: ${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`}`);
 });
