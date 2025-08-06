@@ -35,14 +35,7 @@ app.get('/post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generatePost();
-    
-    // Правильные заголовки для HTML
-    res.set({
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300', // 5 минут
-      'X-Robots-Tag': 'index, follow'
-    });
-    
+    res.set('Content-Type', 'text/html');
     res.send(result.html);
   } catch (error) {
     console.error('Error generating post:', error);
@@ -50,40 +43,10 @@ app.get('/post', async (req, res) => {
   }
 });
 
-// Динамический пост
-app.get('/post/:slug/:username/:imageId', async (req, res) => {
-  try {
-    const { slug, username, imageId } = req.params;
-    
-    // Валидация параметров
-    if (!slug || !username || !imageId) {
-      return res.status(400).send('Missing required parameters');
-    }
-    
-    const generator = new StaticHTMLGenerator();
-    const result = await generator.generateDynamicPost(slug, username, imageId);
-    
-    // Правильные заголовки для HTML
-    res.set({
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300', // 5 минут
-      'X-Robots-Tag': 'index, follow'
-    });
-    
-    res.send(result.html);
-  } catch (error) {
-    console.error('Error generating dynamic post:', error);
-    res.status(500).send('Error generating page');
-  }
-});
-
-// API для создания нового поста
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
-    
-    res.set('Content-Type', 'application/json; charset=utf-8');
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
