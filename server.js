@@ -21,9 +21,7 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
     } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
       res.set('Content-Type', 'image/jpeg');
     }
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
+    res.set('Cache-Control', 'public, max-age=3600');
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -50,11 +48,8 @@ app.post('/api/create-post', async (req, res) => {
       console.warn('KV storage error:', kvError.message);
     }
 
-    // Добавляем timestamp к URL страницы для cache busting
-    const timestamp = Date.now();
-    result.url = `${generator.baseUrl}/post/${postId}?v=${timestamp}`;
+    result.url = `${generator.baseUrl}/post/${postId}`;
 
-    // Делаем одну проверку от имени Twitterbot
     try {
       const https = require('https');
       const http = require('http');
@@ -127,9 +122,7 @@ app.get('/post/:id', async (req, res) => {
     }
 
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
+    res.set('Cache-Control', 'public, max-age=3600');
     res.set('X-Robots-Tag', 'index, follow');
     res.send(html);
   } catch (error) {
