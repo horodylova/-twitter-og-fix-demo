@@ -6,6 +6,26 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+function isTwitterBot(userAgent) {
+  const botPatterns = [
+    /twitterbot/i,
+    /facebookexternalhit/i,
+    /linkedinbot/i,
+    /whatsapp/i,
+    /telegrambot/i,
+    /slackbot/i,
+    /discordbot/i,
+    /skypebot/i,
+    /applebot/i,
+    /googlebot/i,
+    /bingbot/i,
+    /yandexbot/i,
+    /baiduspider/i
+  ];
+  
+  return botPatterns.some(pattern => pattern.test(userAgent));
+}
+
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.png')) {
@@ -37,6 +57,14 @@ app.post('/api/create-post', async (req, res) => {
 
 app.get('/post/:id', async (req, res) => {
   try {
+    const userAgent = req.get('User-Agent') || '';
+    const isBot = isTwitterBot(userAgent);
+    
+    if (isBot) {
+      console.log('Bot detected:', userAgent);
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+    
     const parts = req.params.id.split('-');
     const slug = parts[0];
     const username = parts[1];
@@ -46,8 +74,6 @@ app.get('/post/:id', async (req, res) => {
     const result = await generator.generatePost();
     
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=3600');
-    res.set('X-Robots-Tag', 'index, follow');
     res.send(result.html);
   } catch (error) {
     console.error('Error fetching post:', error);
