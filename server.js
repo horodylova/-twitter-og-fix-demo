@@ -23,29 +23,13 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
 app.use(express.static('public'));
 app.use(express.json());
 
-app.get('/post', async (req, res) => {
-  try {
-    const generator = new StaticHTMLGenerator();
-    const result = await generator.generatePost();
-    res.set('Content-Type', 'text/html');
-    res.send(result.html);
-  } catch (error) {
-    console.error('Error generating post:', error);
-    res.status(500).send('Error generating page');
-  }
-});
-
-app.get('/post/:slug/:username/:imageId', async (req, res) => {
-  try {
-    const { slug, username, imageId } = req.params;
-    const generator = new StaticHTMLGenerator({ slug, username, imageId });
-    const result = await generator.generatePost();
-    res.set('Content-Type', 'text/html');
-    res.send(result.html);
-  } catch (error) {
-    console.error('Error generating dynamic post:', error);
-    res.status(500).send('Error generating page');
-  }
+app.get('/post/:slug', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'posts', `${req.params.slug}.html`);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.status(404).send('Page not found');
+    }
+  });
 });
 
 app.post('/api/create-post', async (req, res) => {
@@ -110,9 +94,9 @@ app.get('/', (req, res) => {
     <body>
         <div class="container">
             <h1>🐦 Twitter Card Demo</h1>
-            <p>Create a page with your image for Twitter sharing</p>
+            <p>Create a static page with your image for Twitter sharing</p>
             
-            <button onclick="createPage()">Create Page</button>
+            <button onclick="createPage()">Create Static Page</button>
             
             <div id="result" class="result"></div>
             
@@ -121,7 +105,7 @@ app.get('/', (req, res) => {
                     const resultDiv = document.getElementById('result');
                     resultDiv.style.display = 'block';
                     resultDiv.className = 'result';
-                    resultDiv.innerHTML = 'Creating page...';
+                    resultDiv.innerHTML = 'Creating static page...';
                     
                     try {
                         const response = await fetch('/api/create-post', {
@@ -133,7 +117,7 @@ app.get('/', (req, res) => {
                             const data = await response.json();
                             resultDiv.className = 'result success';
                             resultDiv.innerHTML = \`
-                                ✅ Page created successfully!<br>
+                                ✅ Static page created successfully!<br>
                                 <a href="\${data.url}" target="_blank">View Page</a> | 
                                 <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
                             \`;

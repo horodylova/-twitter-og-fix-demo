@@ -12,17 +12,17 @@ class StaticHTMLGenerator {
     this.imageId = options.imageId || '1';
   }
 
+  generateDynamicUrl() {
+    if (this.slug) {
+      return `${this.baseUrl}/post/${this.slug}`;
+    }
+    return `${this.baseUrl}/post`;
+  }
+
   getDynamicImageUrl() {
     const imageId = parseInt(this.imageId) || 1;
     const imageIndex = ((imageId - 1) % 3) + 1;
     return `${this.baseUrl}/images/${imageIndex}.png?1`;
-  }
-
-  generateDynamicUrl() {
-    if (this.slug && this.username && this.imageId) {
-      return `${this.baseUrl}/post/${this.slug}/${this.username}/${this.imageId}`;
-    }
-    return `${this.baseUrl}/post`;
   }
 
   async generatePost() {
@@ -36,6 +36,21 @@ class StaticHTMLGenerator {
     };
   }
 
+  async generateAndSavePost() {
+    const result = await this.generatePost();
+    
+    const postsDir = path.join(__dirname, '..', 'public', 'posts');
+    await fs.mkdir(postsDir, { recursive: true });
+    
+    const filePath = path.join(postsDir, `${this.slug}.html`);
+    await fs.writeFile(filePath, result.html);
+    
+    return {
+      ...result,
+      filePath
+    };
+  }
+
   async generateRandomPost() {
     const randomSlug = this.generateRandomSlug();
     const randomUsername = this.generateRandomUsername();
@@ -45,7 +60,7 @@ class StaticHTMLGenerator {
     this.username = randomUsername;
     this.imageId = randomImageId.toString();
     
-    return await this.generatePost();
+    return await this.generateAndSavePost();
   }
 
   generateRandomSlug() {
