@@ -23,7 +23,7 @@ app.get('/post', async (req, res) => {
   }
 });
 
-app.get('/:slug/:username/:imageId', async (req, res) => {
+app.get('/post/:slug/:username/:imageId', async (req, res) => {
   try {
     const { slug, username, imageId } = req.params;
     const generator = new StaticHTMLGenerator();

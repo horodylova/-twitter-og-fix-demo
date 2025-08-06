@@ -26,7 +26,7 @@ class StaticHTMLGenerator {
   generateDynamicPost(slug, username, imageId) {
     const imageIndex = parseInt(imageId) % 3 + 1;
     const imageUrl = `${this.baseUrl}/images/${imageIndex}.png`;
-    const pageUrl = `${this.baseUrl}/${slug}/${username}/${imageId}`;
+    const pageUrl = `${this.baseUrl}/post/${slug}/${username}/${imageId}`;
     
     const pageData = {
       title: `${slug.replace('-', ' ').toUpperCase()} - ID: ${imageId}`,
