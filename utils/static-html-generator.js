@@ -3,8 +3,45 @@ const path = require('path');
 
 class StaticHTMLGenerator {
   constructor() {
-    this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    if (process.env.VERCEL_URL) {
+      this.baseUrl = `https://${process.env.VERCEL_URL}`;
+    } else {
+      this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    }
     this.imageUrl = `${this.baseUrl}/images/1.png`;
+  }
+
+  generateRandomPost() {
+    const adjectives = ['amazing', 'special', 'limited', 'exclusive', 'premium'];
+    const nouns = ['offer', 'deal', 'promo', 'discount', 'sale'];
+    const usernames = ['user123', 'user456', 'user789', 'premium-user', 'vip-member'];
+    
+    const slug = `${adjectives[Math.floor(Math.random() * adjectives.length)]}-${nouns[Math.floor(Math.random() * nouns.length)]}`;
+    const username = usernames[Math.floor(Math.random() * usernames.length)];
+    const imageId = Math.floor(Math.random() * 90000) + 10000;
+    
+    return this.generateDynamicPost(slug, username, imageId.toString());
+  }
+
+  generateDynamicPost(slug, username, imageId) {
+    const imageIndex = parseInt(imageId) % 3 + 1;
+    const imageUrl = `${this.baseUrl}/images/${imageIndex}.png`;
+    const pageUrl = `${this.baseUrl}/${slug}/${username}/${imageId}`;
+    
+    const pageData = {
+      title: `${slug.replace('-', ' ').toUpperCase()} - ID: ${imageId}`,
+      description: `Exclusive offer for ${username}! Limited time opportunity with ID ${imageId}.`,
+      imageUrl,
+      pageUrl
+    };
+    
+    const html = this.buildHTML(pageData);
+    
+    return {
+      html,
+      url: pageUrl,
+      success: true
+    };
   }
 
   async generatePost() {

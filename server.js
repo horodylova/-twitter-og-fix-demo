@@ -23,10 +23,23 @@ app.get('/post', async (req, res) => {
   }
 });
 
+app.get('/:slug/:username/:imageId', async (req, res) => {
+  try {
+    const { slug, username, imageId } = req.params;
+    const generator = new StaticHTMLGenerator();
+    const result = await generator.generateDynamicPost(slug, username, imageId);
+    res.set('Content-Type', 'text/html');
+    res.send(result.html);
+  } catch (error) {
+    console.error('Error generating dynamic post:', error);
+    res.status(500).send('Error generating page');
+  }
+});
+
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
-    const result = await generator.generatePost();
+    const result = await generator.generateRandomPost();
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
