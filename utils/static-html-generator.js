@@ -9,12 +9,13 @@ class StaticHTMLGenerator {
     
     this.slug = options.slug || null;
     this.username = options.username || null;
-    this.imageId = options.imageId || '1';
+    this.imageId = options.imageId || null; // Изменено с '1' на null
   }
 
   getDynamicImageUrl() {
     try {
-      const imageId = parseInt(this.imageId) || 1;
+      // Если imageId не задан, генерируем случайный
+      const imageId = this.imageId ? parseInt(this.imageId) : Math.floor(Math.random() * 3) + 1;
       const imageIndex = ((imageId - 1) % 3) + 1;
       return `${this.baseUrl}/images/${imageIndex}.png`;
     } catch (error) {
