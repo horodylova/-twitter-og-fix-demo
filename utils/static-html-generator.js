@@ -14,10 +14,8 @@ class StaticHTMLGenerator {
 
   getDynamicImageUrl() {
     try {
-      // Если imageId не задан, генерируем случайный
       const imageId = this.imageId ? parseInt(this.imageId) : Math.floor(Math.random() * 3) + 1;
-      const imageIndex = ((imageId - 1) % 3) + 1;
-      return `${this.baseUrl}/images/${imageIndex}.png`;
+      return `${this.baseUrl}/images/${imageId}.png`;
     } catch (error) {
       return `${this.baseUrl}/images/1.png`;
     }
