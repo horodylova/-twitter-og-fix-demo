@@ -21,10 +21,8 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
     } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
       res.set('Content-Type', 'image/jpeg');
     }
-    res.set('Cache-Control', 'public, max-age=86400');
+    res.set('Cache-Control', 'public, max-age=3600');
     res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   }
 }));
 
@@ -40,15 +38,9 @@ app.post('/api/create-post', async (req, res) => {
 
     try {
       if (kv instanceof Map) {
-        kv.set(`post:${postId}`, {
-          html: result.html,
-          timestamp: result.timestamp
-        });
+        kv.set(`post:${postId}`, result.html);
       } else {
-        await kv.set(`post:${postId}`, {
-          html: result.html,
-          timestamp: result.timestamp
-        }, { ex: 60 * 60 * 24 * 30 });
+        await kv.set(`post:${postId}`, result.html, { ex: 60 * 60 * 24 * 30 });
       }
     } catch (kvError) {
       console.warn('KV storage error:', kvError.message);
@@ -64,30 +56,25 @@ app.post('/api/create-post', async (req, res) => {
 
 app.get('/post/:id', async (req, res) => {
   try {
-    let postData;
+    let html;
     try {
       if (kv instanceof Map) {
-        postData = kv.get(`post:${req.params.id}`);
+        html = kv.get(`post:${req.params.id}`);
       } else {
-        postData = await kv.get(`post:${req.params.id}`);
+        html = await kv.get(`post:${req.params.id}`);
       }
     } catch (kvError) {
       console.warn('KV storage error:', kvError.message);
-      postData = null;
+      html = null;
     }
     
-    let html;
-    if (postData && postData.html) {
-      html = postData.html;
-    } else {
+    if (!html) {
       const generator = new StaticHTMLGenerator();
       const fallbackResult = await generator.generateRandomPost();
       html = fallbackResult.html;
     }
 
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=3600');
-    res.set('X-Robots-Tag', 'index, follow');
     res.send(html);
   } catch (error) {
     console.error('Error fetching post:', error);
