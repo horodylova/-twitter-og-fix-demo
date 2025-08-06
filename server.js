@@ -35,6 +35,34 @@ app.post('/api/create-post', async (req, res) => {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
     
+    // Делаем запрос к созданной странице для её активации
+    try {
+      const https = require('https');
+      const http = require('http');
+      
+      const protocol = result.url.startsWith('https') ? https : http;
+      
+      await new Promise((resolve) => {
+        const req = protocol.get(result.url, (res) => {
+          res.on('data', () => {});
+          res.on('end', () => {
+            console.log(`Page activated: ${result.url}`);
+            resolve();
+          });
+        });
+        req.on('error', (err) => {
+          console.error('Page activation failed:', err.message);
+          resolve();
+        });
+        req.setTimeout(3000, () => {
+          req.destroy();
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.warn('Page activation failed:', error.message);
+    }
+    
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
