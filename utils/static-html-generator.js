@@ -1,7 +1,5 @@
 const fs = require('fs').promises;
 const path = require('path');
-const https = require('https');
-const http = require('http');
 
 class StaticHTMLGenerator {
   constructor(options = {}) {
@@ -26,50 +24,9 @@ class StaticHTMLGenerator {
     return `${this.baseUrl}/images/${imageIndex}.png?t=${this.timestamp}&v=${Math.random().toString(36).slice(2, 11)}`;
   }
 
-  async simulateTwitterValidator(pageUrl, imageUrl) {
-    try {
-      const protocol = pageUrl.startsWith('https:') ? https : http;
-      
-      await new Promise((resolve, reject) => {
-        const req = protocol.request(pageUrl, { method: 'HEAD' }, (res) => {
-          resolve();
-        });
-        req.on('error', reject);
-        req.setTimeout(3000, () => {
-          req.destroy();
-          resolve();
-        });
-        req.end();
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const imageProtocol = imageUrl.startsWith('https:') ? https : http;
-      await new Promise((resolve, reject) => {
-        const req = imageProtocol.get(imageUrl, (res) => {
-          res.on('data', () => {});
-          res.on('end', resolve);
-        });
-        req.on('error', resolve);
-        req.setTimeout(5000, () => {
-          req.destroy();
-          resolve();
-        });
-      });
-      
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
   async generatePost() {
     const pageData = this.getPageData();
     const html = this.buildHTML(pageData);
-    
-    setTimeout(() => {
-      this.simulateTwitterValidator(pageData.pageUrl, pageData.imageUrl);
-    }, 1000);
     
     return {
       html,
