@@ -1,13 +1,19 @@
 const express = require('express');
 const path = require('path');
 const StaticHTMLGenerator = require('./utils/static-html-generator');
-const { kv } = require('@vercel/kv'); // Устанавливаем пакет: npm i @vercel/kv
 require('dotenv').config();
+
+let kv;
+try {
+  kv = require('@vercel/kv').kv;
+} catch (error) {
+  console.log('KV not available, using memory storage');
+  kv = new Map();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Static images
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.png')) {
@@ -23,7 +29,6 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
 app.use(express.static('public'));
 app.use(express.json());
 
-// Создание поста и сохранение HTML в KV
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
@@ -31,8 +36,11 @@ app.post('/api/create-post', async (req, res) => {
 
     const postId = `${result.slug}-${result.username}-${result.imageId}`;
 
-    // Сохраняем с TTL (например, 30 дней)
-    await kv.set(`post:${postId}`, result.html, { ex: 60 * 60 * 24 * 30 });
+    if (kv instanceof Map) {
+      kv.set(`post:${postId}`, result.html);
+    } else {
+      await kv.set(`post:${postId}`, result.html, { ex: 60 * 60 * 24 * 30 });
+    }
 
     result.url = `${generator.baseUrl}/post/${postId}`;
     res.json(result);
@@ -42,10 +50,15 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
-// Отдача статичного HTML из KV
 app.get('/post/:id', async (req, res) => {
   try {
-    const html = await kv.get(`post:${req.params.id}`);
+    let html;
+    if (kv instanceof Map) {
+      html = kv.get(`post:${req.params.id}`);
+    } else {
+      html = await kv.get(`post:${req.params.id}`);
+    }
+    
     if (!html) {
       return res.status(404).send('Post not found');
     }
@@ -59,7 +72,6 @@ app.get('/post/:id', async (req, res) => {
   }
 });
 
-// Главная страница
 app.get('/', (req, res) => {
   const baseUrl = process.env.BASE_URL || 
                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
