@@ -9,6 +9,7 @@ class StaticHTMLGenerator {
     this.slug = options.slug || null;
     this.username = options.username || null;
     this.imageId = options.imageId || '1';
+    this.timestamp = options.timestamp || Date.now();
   }
 
   generateDynamicUrl() {
@@ -20,7 +21,7 @@ class StaticHTMLGenerator {
 
   getDynamicImageUrl() {
     const imageIndex = parseInt(this.imageId) % 3 + 1;
-    return `${this.baseUrl}/images/${imageIndex}.png`;
+    return `${this.baseUrl}/images/${imageIndex}.png?v=${this.timestamp}&id=${this.imageId}`;
   }
 
   async generatePost() {
@@ -38,10 +39,14 @@ class StaticHTMLGenerator {
     const randomSlug = this.generateRandomSlug();
     const randomUsername = this.generateRandomUsername();
     const randomImageId = Math.floor(Math.random() * 3) + 1;
+    const timestamp = Date.now();
     
     this.slug = randomSlug;
     this.username = randomUsername;
     this.imageId = randomImageId.toString();
+    this.timestamp = timestamp;
+    
+    console.log(`Generated: slug=${this.slug}, username=${this.username}, imageId=${this.imageId}, timestamp=${this.timestamp}`);
     
     return await this.generatePost();
   }
@@ -72,6 +77,9 @@ class StaticHTMLGenerator {
   getPageData() {
     const pageUrl = this.generateDynamicUrl();
     const imageUrl = this.getDynamicImageUrl();
+    
+    console.log(`Page URL: ${pageUrl}`);
+    console.log(`Image URL: ${imageUrl}`);
     
     return {
       title: 'Special Offer - Limited Time',
