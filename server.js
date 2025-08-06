@@ -73,16 +73,13 @@ app.get('/api/test-image/:id?', (req, res) => {
 
 // Главная страница
 app.get('/', (req, res) => {
-  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
-                  process.env.BASE_URL || `http://localhost:${PORT}`;
+  const baseUrl = process.env.BASE_URL || 
+                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
   
-  res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(`
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
     <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>🐦 Twitter Card Demo</title>
         <style>
             body { 
@@ -110,7 +107,6 @@ app.get('/', (req, res) => {
                 font-size: 16px;
                 cursor: pointer;
                 margin: 10px;
-                transition: background-color 0.2s;
             }
             button:hover { background: #0d8bd9; }
             .result {
@@ -118,20 +114,17 @@ app.get('/', (req, res) => {
                 padding: 15px;
                 border-radius: 10px;
                 display: none;
-                text-align: left;
             }
             .success { background: #d4edda; color: #155724; }
             .error { background: #f8d7da; color: #721c24; }
-            .info { background: #d1ecf1; color: #0c5460; }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>🐦 Twitter Card Generator</h1>
-            <p>Create dynamic pages with unique URLs for Twitter sharing</p>
+            <h1>🐦 Twitter Card Demo</h1>
+            <p>Create a page with your image for Twitter sharing</p>
             
-            <button onclick="createPage()">Create Dynamic Page</button>
-            <button onclick="testImages()">Test Images</button>
+            <button onclick="createPage()">Create Page</button>
             
             <div id="result" class="result"></div>
             
@@ -139,8 +132,8 @@ app.get('/', (req, res) => {
                 async function createPage() {
                     const resultDiv = document.getElementById('result');
                     resultDiv.style.display = 'block';
-                    resultDiv.className = 'result info';
-                    resultDiv.innerHTML = 'Creating dynamic page...';
+                    resultDiv.className = 'result';
+                    resultDiv.innerHTML = 'Creating page...';
                     
                     try {
                         const response = await fetch('/api/create-post', {
@@ -152,12 +145,9 @@ app.get('/', (req, res) => {
                             const data = await response.json();
                             resultDiv.className = 'result success';
                             resultDiv.innerHTML = \`
-                                <strong>✅ Dynamic page created!</strong><br><br>
-                                <strong>URL:</strong> <a href="\${data.url}" target="_blank">\${data.url}</a><br><br>
-                                <strong>Test links:</strong><br>
-                                • <a href="https://cards-dev.twitter.com/validator" target="_blank">Twitter Card Validator</a><br>
-                                • <a href="https://developers.facebook.com/tools/debug/" target="_blank">Facebook Debugger</a><br>
-                                • <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
+                                ✅ Page created successfully!<br>
+                                <a href="\${data.url}" target="_blank">View Page</a> | 
+                                <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
                             \`;
                         } else {
                             throw new Error('Failed to create page');
@@ -165,35 +155,6 @@ app.get('/', (req, res) => {
                     } catch (error) {
                         resultDiv.className = 'result error';
                         resultDiv.innerHTML = '❌ Error: ' + error.message;
-                    }
-                }
-                
-                async function testImages() {
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.style.display = 'block';
-                    resultDiv.className = 'result info';
-                    resultDiv.innerHTML = 'Testing image URLs...';
-                    
-                    try {
-                        const responses = await Promise.all([
-                            fetch('/api/test-image/1'),
-                            fetch('/api/test-image/2'),
-                            fetch('/api/test-image/3')
-                        ]);
-                        
-                        const data = await Promise.all(responses.map(r => r.json()));
-                        
-                        resultDiv.className = 'result info';
-                        resultDiv.innerHTML = \`
-                            <strong>📸 Image Test Results:</strong><br><br>
-                            \${data.map((item, index) => 
-                                \`<strong>Image \${index + 1}:</strong> <a href="\${item.imageUrl}" target="_blank">\${item.imageUrl}</a><br>\`
-                            ).join('')}
-                            <br><small>Click links to verify images load correctly</small>
-                        \`;
-                    } catch (error) {
-                        resultDiv.className = 'result error';
-                        resultDiv.innerHTML = '❌ Error testing images: ' + error.message;
                     }
                 }
             </script>
