@@ -3,12 +3,19 @@ const path = require('path');
 
 class StaticHTMLGenerator {
   constructor(options = {}) {
+    const PORT = process.env.PORT || 3000;
     this.baseUrl = process.env.BASE_URL || 
-                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
     
     this.slug = options.slug || null;
     this.username = options.username || null;
     this.imageId = options.imageId || '1';
+  }
+
+  getDynamicImageUrl() {
+    const imageId = parseInt(this.imageId) || 1;
+    const imageIndex = ((imageId - 1) % 3) + 1;
+    return `${this.baseUrl}/images/${imageIndex}.png?1`;
   }
 
   generateDynamicUrl() {
@@ -16,11 +23,6 @@ class StaticHTMLGenerator {
       return `${this.baseUrl}/post/${this.slug}/${this.username}/${this.imageId}`;
     }
     return `${this.baseUrl}/post`;
-  }
-
-  getDynamicImageUrl() {
-    const imageIndex = parseInt(this.imageId) % 3 + 1;
-    return `${this.baseUrl}/images/${imageIndex}.png?1`;
   }
 
   async generatePost() {
