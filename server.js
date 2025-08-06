@@ -1,13 +1,11 @@
 const express = require('express');
 const path = require('path');
-const fetch = require('node-fetch');
 const StaticHTMLGenerator = require('./utils/static-html-generator');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Static assets
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.png')) {
@@ -25,7 +23,6 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
 app.use(express.static('public'));
 app.use(express.json());
 
-// Static page generation
 app.get('/post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
@@ -40,7 +37,6 @@ app.get('/post', async (req, res) => {
   }
 });
 
-// Dynamic page generation
 app.get('/post/:slug/:username/:imageId', async (req, res) => {
   try {
     const { slug, username, imageId } = req.params;
@@ -56,14 +52,10 @@ app.get('/post/:slug/:username/:imageId', async (req, res) => {
   }
 });
 
-// API endpoint for creating a random post
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
-
-    // Прогреваем страницу, чтобы Vercel CDN и Twitter бот видели OG-теги
-    fetch(result.url).catch(console.error);
 
     res.json(result);
   } catch (error) {
@@ -72,7 +64,6 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
-// Home page
 app.get('/', (req, res) => {
   const baseUrl = process.env.BASE_URL || 
                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
@@ -165,6 +156,10 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
