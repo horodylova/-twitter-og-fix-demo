@@ -16,90 +16,21 @@ class StaticHTMLGenerator {
     try {
       const imageId = parseInt(this.imageId) || 1;
       const imageIndex = ((imageId - 1) % 3) + 1;
-      return `${this.baseUrl}/images/${imageIndex}.png?1`;
+      return `${this.baseUrl}/images/${imageIndex}.png`;
     } catch (error) {
-      return `${this.baseUrl}/images/1.png?1`;
+      return `${this.baseUrl}/images/1.png`;
     }
   }
 
   generateDynamicUrl() {
     try {
       if (this.slug && this.username && this.imageId) {
-        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}?v=1`;
+        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
       }
-      return `${this.baseUrl}/post?v=1`;
+      return `${this.baseUrl}/post`;
     } catch (error) {
-      return `${this.baseUrl}/post?v=1`;
+      return `${this.baseUrl}/post`;
     }
-  }
-
-  async generatePost() {
-    try {
-      const pageData = this.getPageData();
-      const html = this.buildHTML(pageData);
-      
-      return {
-        html,
-        slug: this.slug,
-        username: this.username,
-        imageId: this.imageId,
-        url: this.generateDynamicUrl(),
-        success: true
-      };
-    } catch (error) {
-      throw new Error('Failed to generate post');
-    }
-  }
-
-  async generateRandomPost() {
-    try {
-      const randomSlug = this.generateRandomSlug();
-      const randomUsername = this.generateRandomUsername();
-      const randomImageId = Math.floor(Math.random() * 3) + 1;
-      
-      this.slug = randomSlug;
-      this.username = randomUsername;
-      this.imageId = randomImageId.toString();
-      
-      return await this.generatePost();
-    } catch (error) {
-      throw new Error('Failed to generate random post');
-    }
-  }
-
-  generateRandomSlug() {
-    const slugs = [
-      'amazing-offer',
-      'special-deal',
-      'exclusive-access',
-      'limited-time',
-      'premium-service',
-      'best-opportunity'
-    ];
-    return slugs[Math.floor(Math.random() * slugs.length)];
-  }
-
-  generateRandomUsername() {
-    const usernames = [
-      'user123',
-      'customer456',
-      'member789',
-      'client001',
-      'subscriber999'
-    ];
-    return usernames[Math.floor(Math.random() * usernames.length)];
-  }
-
-  getPageData() {
-    const pageUrl = this.generateDynamicUrl();
-    const imageUrl = this.getDynamicImageUrl();
-    
-    return {
-      title: 'Special Offer - Limited Time',
-      description: 'Amazing opportunity just for you! Get exclusive access to our premium service.',
-      imageUrl,
-      pageUrl
-    };
   }
 
   buildHTML(data) {

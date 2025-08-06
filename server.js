@@ -26,20 +26,7 @@ function isTwitterBot(userAgent) {
   return botPatterns.some(pattern => pattern.test(userAgent));
 }
 
-app.use('/images', express.static(path.join(__dirname, 'public/images'), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.png')) {
-      res.set('Content-Type', 'image/png');
-    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.set('Content-Type', 'image/jpeg');
-    }
-    res.set('Cache-Control', 'public, max-age=3600');
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  }
-}));
-
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.use(express.static('public'));
 app.use(express.json());
 
@@ -63,6 +50,8 @@ app.get('/post/:id', async (req, res) => {
     if (isBot) {
       console.log('Bot detected:', userAgent);
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
     }
     
     const parts = req.params.id.split('-');
