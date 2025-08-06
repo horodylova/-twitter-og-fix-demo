@@ -35,6 +35,51 @@ app.post('/api/create-post', async (req, res) => {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
     
+    // Проверяем что страница реально отвечает правильным HTML
+    let pageReady = false;
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    while (!pageReady && attempts < maxAttempts) {
+      try {
+        const https = require('https');
+        const http = require('http');
+        
+        const protocol = result.url.startsWith('https') ? https : http;
+        
+        await new Promise((resolve, reject) => {
+          const req = protocol.get(result.url, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+              // Проверяем что ответ содержит мета-теги
+              if (data.includes('og:title') && data.includes('twitter:card')) {
+                pageReady = true;
+                console.log(`Page ready after ${attempts + 1} attempts`);
+              }
+              resolve();
+            });
+          });
+          req.on('error', reject);
+          req.setTimeout(2000, () => {
+            req.destroy();
+            reject(new Error('Timeout'));
+          });
+        });
+      } catch (error) {
+        console.log(`Attempt ${attempts + 1} failed:`, error.message);
+      }
+      
+      attempts++;
+      if (!pageReady && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms между попытками
+      }
+    }
+    
+    if (!pageReady) {
+      console.warn('Page not ready after all attempts, returning anyway');
+    }
+    
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
