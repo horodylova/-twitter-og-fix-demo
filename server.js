@@ -14,16 +14,6 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use((req, res, next) => {
-  const userAgent = req.get('User-Agent') || '';
-  if (userAgent.toLowerCase().includes('twitterbot')) {
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-  }
-  next();
-});
-
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.png')) {
@@ -60,61 +50,9 @@ app.post('/api/create-post', async (req, res) => {
       console.warn('KV storage error:', kvError.message);
     }
 
-    result.url = `${generator.baseUrl}/post/${postId}`;
-
-    const warmupRequests = async () => {
-      const https = require('https');
-      const http = require('http');
-      const url = require('url');
-      
-      const parsedUrl = url.parse(result.url);
-      const options = {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
-        path: parsedUrl.path,
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Twitterbot/1.0'
-        }
-      };
-
-      const client = parsedUrl.protocol === 'https:' ? https : http;
-      
-      for (let i = 0; i < 3; i++) {
-        try {
-          await new Promise((resolve) => {
-            const req = client.request(options, (res) => {
-              res.on('data', () => {});
-              res.on('end', () => {
-                console.log(`Twitter warmup ${i + 1}/3 successful`);
-                resolve();
-              });
-            });
-            
-            req.on('error', (err) => {
-              console.error(`Twitter warmup ${i + 1}/3 error:`, err.message);
-              resolve();
-            });
-            
-            req.setTimeout(5000, () => {
-              req.destroy();
-              resolve();
-            });
-            
-            req.end();
-          });
-       
-          if (i < 2) {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-          }
-        } catch (error) {
-          console.error(`Warmup attempt ${i + 1} failed:`, error.message);
-        }
-      }
-    };
-
- 
-    warmupRequests().catch(err => console.error('Warmup failed:', err));
+    // Добавляем timestamp к URL страницы для cache busting
+    const timestamp = Date.now();
+    result.url = `${generator.baseUrl}/post/${postId}?v=${timestamp}`;
 
     res.json(result);
   } catch (error) {
@@ -226,4 +164,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-
