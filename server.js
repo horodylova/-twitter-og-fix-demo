@@ -49,9 +49,9 @@ app.get('/post/:id', async (req, res) => {
     
     if (isBot) {
       console.log('Bot detected:', userAgent);
+      res.set('Cache-Control', 'public, max-age=300');
+    } else {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
     }
     
     const parts = req.params.id.split('-');
