@@ -3,14 +3,6 @@ const path = require('path');
 const StaticHTMLGenerator = require('./utils/static-html-generator');
 require('dotenv').config();
 
-let kv;
-try {
-  kv = require('@vercel/kv').kv;
-} catch (error) {
-  console.log('KV not available, using memory storage');
-  kv = new Map();
-}
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -35,65 +27,7 @@ app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
-
-    const postId = `${result.slug}-${result.username}-${result.imageId}`;
-
-    try {
-      if (kv instanceof Map) {
-        kv.set(`post:${postId}`, result.html);
-      } else {
-        await kv.set(`post:${postId}`, result.html, { ex: 60 * 60 * 24 * 30 });
-      }
-    } catch (kvError) {
-      console.warn('KV storage error:', kvError.message);
-    }
-
-    result.url = `${generator.baseUrl}/post/${postId}`;
-
-    try {
-      const https = require('https');
-      const http = require('http');
-      const url = require('url');
-      
-      const parsedUrl = url.parse(result.url);
-      const options = {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
-        path: parsedUrl.path,
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Twitterbot/1.0'
-        }
-      };
-
-      const client = parsedUrl.protocol === 'https:' ? https : http;
-      
-      await new Promise((resolve) => {
-        const req = client.request(options, (res) => {
-          res.on('data', () => {});
-          res.on('end', () => {
-            console.log(`Twitter warmup successful for: ${result.url}`);
-            resolve();
-          });
-        });
-        
-        req.on('error', (err) => {
-          console.error('Twitter warmup error:', err.message);
-          resolve();
-        });
-        
-        req.setTimeout(3000, () => {
-          req.destroy();
-          resolve();
-        });
-        
-        req.end();
-      });
-      
-    } catch (warmupError) {
-      console.warn('Warmup failed:', warmupError.message);
-    }
-
+    
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
@@ -103,28 +37,18 @@ app.post('/api/create-post', async (req, res) => {
 
 app.get('/post/:id', async (req, res) => {
   try {
-    let html;
-    try {
-      if (kv instanceof Map) {
-        html = kv.get(`post:${req.params.id}`);
-      } else {
-        html = await kv.get(`post:${req.params.id}`);
-      }
-    } catch (kvError) {
-      console.warn('KV storage error:', kvError.message);
-      html = null;
-    }
+    const parts = req.params.id.split('-');
+    const slug = parts[0];
+    const username = parts[1];
+    const imageId = parts[2];
     
-    if (!html) {
-      const generator = new StaticHTMLGenerator();
-      const fallbackResult = await generator.generateRandomPost();
-      html = fallbackResult.html;
-    }
-
+    const generator = new StaticHTMLGenerator({ slug, username, imageId });
+    const result = await generator.generatePost();
+    
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=3600');
     res.set('X-Robots-Tag', 'index, follow');
-    res.send(html);
+    res.send(result.html);
   } catch (error) {
     console.error('Error fetching post:', error);
     res.status(500).send('Error loading post');
