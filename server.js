@@ -14,6 +14,16 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use((req, res, next) => {
+  const userAgent = req.get('User-Agent') || '';
+  if (userAgent.toLowerCase().includes('twitterbot')) {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+  next();
+});
+
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.png')) {
@@ -52,8 +62,7 @@ app.post('/api/create-post', async (req, res) => {
 
     result.url = `${generator.baseUrl}/post/${postId}`;
 
-     
-    try {
+    const warmupRequests = async () => {
       const https = require('https');
       const http = require('http');
       const url = require('url');
@@ -65,41 +74,47 @@ app.post('/api/create-post', async (req, res) => {
         path: parsedUrl.path,
         method: 'GET',
         headers: {
-          'User-Agent': 'Twitterbot/1.0'   
+          'User-Agent': 'Twitterbot/1.0'
         }
       };
 
       const client = parsedUrl.protocol === 'https:' ? https : http;
       
-      await new Promise((resolve) => {
-        const req = client.request(options, (res) => {
-          res.on('data', () => {});
-          res.on('end', () => {
-            console.log(`Twitter warmup successful for: ${result.url}`);
-            resolve();
+      for (let i = 0; i < 3; i++) {
+        try {
+          await new Promise((resolve) => {
+            const req = client.request(options, (res) => {
+              res.on('data', () => {});
+              res.on('end', () => {
+                console.log(`Twitter warmup ${i + 1}/3 successful`);
+                resolve();
+              });
+            });
+            
+            req.on('error', (err) => {
+              console.error(`Twitter warmup ${i + 1}/3 error:`, err.message);
+              resolve();
+            });
+            
+            req.setTimeout(5000, () => {
+              req.destroy();
+              resolve();
+            });
+            
+            req.end();
           });
-        });
-        
-        req.on('error', (err) => {
-          console.error('Twitter warmup error:', err.message);
-          resolve();
-        });
-        
-        req.setTimeout(5000, () => {
-          req.destroy();
-          console.log('Twitter warmup timeout');
-          resolve();
-        });
-        
-        req.end();
-      });
-      
-    
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-    } catch (warmupError) {
-      console.warn('Warmup failed:', warmupError.message);
-    }
+       
+          if (i < 2) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+        } catch (error) {
+          console.error(`Warmup attempt ${i + 1} failed:`, error.message);
+        }
+      }
+    };
+
+ 
+    warmupRequests().catch(err => console.error('Warmup failed:', err));
 
     res.json(result);
   } catch (error) {
