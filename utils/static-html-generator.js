@@ -2,10 +2,25 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class StaticHTMLGenerator {
-  constructor() {
+  constructor(options = {}) {
     this.baseUrl = process.env.BASE_URL || 
                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-    this.imageUrl = `${this.baseUrl}/images/1.png`;
+    
+    this.slug = options.slug || null;
+    this.username = options.username || null;
+    this.imageId = options.imageId || '1';
+  }
+
+  generateDynamicUrl() {
+    if (this.slug && this.username && this.imageId) {
+      return `${this.baseUrl}/post/${this.slug}/${this.username}/${this.imageId}`;
+    }
+    return `${this.baseUrl}/post`;
+  }
+
+  getDynamicImageUrl() {
+    const imageIndex = parseInt(this.imageId) % 3 + 1;
+    return `${this.baseUrl}/images/${imageIndex}.png`;
   }
 
   async generatePost() {
@@ -14,18 +29,54 @@ class StaticHTMLGenerator {
     
     return {
       html,
-      url: `${this.baseUrl}/post`,
+      url: this.generateDynamicUrl(),
       success: true
     };
   }
 
+  async generateRandomPost() {
+    const randomSlug = this.generateRandomSlug();
+    const randomUsername = this.generateRandomUsername();
+    const randomImageId = Math.floor(Math.random() * 3) + 1;
+    
+    this.slug = randomSlug;
+    this.username = randomUsername;
+    this.imageId = randomImageId.toString();
+    
+    return await this.generatePost();
+  }
+
+  generateRandomSlug() {
+    const slugs = [
+      'amazing-offer',
+      'special-deal',
+      'exclusive-access',
+      'limited-time',
+      'premium-service',
+      'best-opportunity'
+    ];
+    return slugs[Math.floor(Math.random() * slugs.length)];
+  }
+
+  generateRandomUsername() {
+    const usernames = [
+      'user123',
+      'customer456',
+      'member789',
+      'client001',
+      'subscriber999'
+    ];
+    return usernames[Math.floor(Math.random() * usernames.length)];
+  }
+
   getPageData() {
-    const pageUrl = `${this.baseUrl}/post`;
+    const pageUrl = this.generateDynamicUrl();
+    const imageUrl = this.getDynamicImageUrl();
     
     return {
       title: 'Special Offer - Limited Time',
       description: 'Amazing opportunity just for you! Get exclusive access to our premium service.',
-      imageUrl: this.imageUrl,
+      imageUrl,
       pageUrl
     };
   }
