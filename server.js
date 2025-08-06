@@ -54,6 +54,51 @@ app.post('/api/create-post', async (req, res) => {
     const timestamp = Date.now();
     result.url = `${generator.baseUrl}/post/${postId}?v=${timestamp}`;
 
+    // Делаем одну проверку от имени Twitterbot
+    try {
+      const https = require('https');
+      const http = require('http');
+      const url = require('url');
+      
+      const parsedUrl = url.parse(result.url);
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
+        path: parsedUrl.path,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Twitterbot/1.0'
+        }
+      };
+
+      const client = parsedUrl.protocol === 'https:' ? https : http;
+      
+      await new Promise((resolve) => {
+        const req = client.request(options, (res) => {
+          res.on('data', () => {});
+          res.on('end', () => {
+            console.log(`Twitter warmup successful for: ${result.url}`);
+            resolve();
+          });
+        });
+        
+        req.on('error', (err) => {
+          console.error('Twitter warmup error:', err.message);
+          resolve();
+        });
+        
+        req.setTimeout(3000, () => {
+          req.destroy();
+          resolve();
+        });
+        
+        req.end();
+      });
+      
+    } catch (warmupError) {
+      console.warn('Warmup failed:', warmupError.message);
+    }
+
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
