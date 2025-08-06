@@ -1,77 +1,3 @@
-const express = require('express');
-const path = require('path');
-const StaticHTMLGenerator = require('./utils/static-html-generator');
-
-require('dotenv').config();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware для правильных заголовков
-app.use((req, res, next) => {
-  // Убираем заголовки, которые могут мешать краулерам
-  res.removeHeader('X-Powered-By');
-  next();
-});
-
-// Статические файлы с правильными заголовками
-app.use('/images', express.static(path.join(__dirname, 'public/images'), {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.png')) {
-      res.set('Content-Type', 'image/png');
-    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      res.set('Content-Type', 'image/jpeg');
-    }
-    res.set('Cache-Control', 'public, max-age=86400'); // 24 часа
-    res.set('Access-Control-Allow-Origin', '*');
-  }
-}));
-
-app.use(express.static('public'));
-app.use(express.json());
-
-// Статический пост (старый роут)
-app.get('/post', async (req, res) => {
-  try {
-    const generator = new StaticHTMLGenerator();
-    const result = await generator.generatePost();
-    res.set('Content-Type', 'text/html');
-    res.send(result.html);
-  } catch (error) {
-    console.error('Error generating post:', error);
-    res.status(500).send('Error generating page');
-  }
-});
-
-app.post('/api/create-post', async (req, res) => {
-  try {
-    const generator = new StaticHTMLGenerator();
-    const result = await generator.generateRandomPost();
-    res.json(result);
-  } catch (error) {
-    console.error('Error creating post:', error);
-    res.status(500).json({ error: 'Failed to create post' });
-  }
-});
-
-// Тестовый роут для проверки изображений
-app.get('/api/test-image/:id?', (req, res) => {
-  const imageId = req.params.id || '1';
-  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
-                  process.env.BASE_URL || `http://localhost:${PORT}`;
-  
-  const imageIndex = parseInt(imageId) % 3 + 1;
-  const imageUrl = `${baseUrl}/images/${imageIndex}.png`;
-  
-  res.json({
-    imageUrl,
-    imageIndex,
-    baseUrl,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Главная страница
 app.get('/', (req, res) => {
   const baseUrl = process.env.BASE_URL || 
                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
@@ -162,9 +88,4 @@ app.get('/', (req, res) => {
     </body>
     </html>
   `);
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Base URL: ${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`}`);
 });
