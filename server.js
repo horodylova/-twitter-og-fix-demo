@@ -2,140 +2,84 @@ const express = require('express');
 const path = require('path');
 const StaticHTMLGenerator = require('./utils/static-html-generator');
 
-require('dotenv').config();
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use('/images', express.static(path.join(__dirname, 'public/images'), {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.png')) {
-      res.set('Content-Type', 'image/png');
-    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      res.set('Content-Type', 'image/jpeg');
-    }
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    res.set('Access-Control-Allow-Origin', '*');
-  }
-}));
-app.use(express.static('public'));
 app.use(express.json());
+app.use(express.static('public'));
 
-app.get('/post/:slug', (req, res) => {
-  const filePath = path.join(__dirname, 'public', 'posts', `${req.params.slug}.html`);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      res.status(404).send('Page not found');
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+    maxAge: '1d',
+    etag: false
+}));
+
+const generator = new StaticHTMLGenerator();
+
+app.get('/post/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const html = await generator.getPostHTML(slug);
+        
+        if (html) {
+            res.setHeader('Content-Type', 'text/html');
+            res.send(html);
+        } else {
+            res.status(404).send('Post not found');
+        }
+    } catch (error) {
+        console.error('Error serving post:', error);
+        res.status(500).send('Internal server error');
     }
-  });
 });
 
 app.post('/api/create-post', async (req, res) => {
-  try {
-    const generator = new StaticHTMLGenerator();
-    const result = await generator.generateRandomPost();
-    
-    res.json(result);
-  } catch (error) {
-    console.error('Error creating post:', error);
-    res.status(500).json({ error: 'Failed to create post' });
-  }
+    try {
+        const { title, description, imageUrl, slug } = req.body;
+        
+        if (!title || !description || !imageUrl || !slug) {
+            return res.status(400).json({ 
+                error: 'Missing required fields: title, description, imageUrl, slug' 
+            });
+        }
+
+        const result = await generator.generateAndSavePost({
+            title,
+            description,
+            imageUrl,
+            slug
+        });
+
+        if (result.success) {
+            res.json({
+                success: true,
+                url: result.url,
+                message: 'Post created successfully'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: result.error
+            });
+        }
+    } catch (error) {
+        console.error('Error in create-post API:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error'
+        });
+    }
 });
 
 app.get('/', (req, res) => {
-  const baseUrl = process.env.BASE_URL || 
-                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
-  
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>🐦 Twitter Card Demo</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                max-width: 600px; 
-                margin: 50px auto; 
-                padding: 20px;
-                background: #f5f5f5;
-            }
-            .container {
-                background: white;
-                padding: 40px;
-                border-radius: 20px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-                text-align: center;
-            }
-            h1 { color: #333; margin-bottom: 10px; }
-            p { color: #666; margin-bottom: 30px; }
-            button {
-                background: #1da1f2;
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 50px;
-                font-size: 16px;
-                cursor: pointer;
-                margin: 10px;
-            }
-            button:hover { background: #0d8bd9; }
-            .result {
-                margin-top: 20px;
-                padding: 15px;
-                border-radius: 10px;
-                display: none;
-            }
-            .success { background: #d4edda; color: #155724; }
-            .error { background: #f8d7da; color: #721c24; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🐦 Twitter Card Demo</h1>
-            <p>Create a static page with your image for Twitter sharing</p>
-            
-            <button onclick="createPage()">Create Static Page</button>
-            
-            <div id="result" class="result"></div>
-            
-            <script>
-                async function createPage() {
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.style.display = 'block';
-                    resultDiv.className = 'result';
-                    resultDiv.innerHTML = 'Creating static page...';
-                    
-                    try {
-                        const response = await fetch('/api/create-post', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            resultDiv.className = 'result success';
-                            resultDiv.innerHTML = \`
-                                ✅ Static page created successfully!<br>
-                                <a href="\${data.url}" target="_blank">View Page</a> | 
-                                <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
-                            \`;
-                        } else {
-                            throw new Error('Failed to create page');
-                        }
-                    } catch (error) {
-                        resultDiv.className = 'result error';
-                        resultDiv.innerHTML = '❌ Error: ' + error.message;
-                    }
-                }
-            </script>
-        </div>
-    </body>
-    </html>
-  `);
+    res.json({ 
+        message: 'Twitter OG Fix Demo API',
+        endpoints: {
+            'POST /api/create-post': 'Create a new post with OG tags',
+            'GET /post/:slug': 'View generated post'
+        }
+    });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
