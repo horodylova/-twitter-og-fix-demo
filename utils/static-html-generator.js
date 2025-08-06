@@ -66,7 +66,7 @@ class StaticHTMLGenerator {
   }
 
   async generateRandomPost() {
-    const randomSlug = this.generateRandomSlug();
+   const randomSlug = this.generateRandomSlug();
     const randomUsername = this.generateRandomUsername();
     const randomImageId = Math.floor(Math.random() * 3) + 1;
     const timestamp = Date.now();
@@ -76,7 +76,11 @@ class StaticHTMLGenerator {
     this.imageId = randomImageId.toString();
     this.timestamp = timestamp;
     
-    return await this.generatePost();
+    const result = await this.generatePost();
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    return result;
   }
 
   generateRandomSlug() {
