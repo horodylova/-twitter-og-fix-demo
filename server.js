@@ -53,23 +53,6 @@ app.post('/api/create-post', async (req, res) => {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
     
-    try {
-      const https = require('https');
-      const http = require('http');
-      
-      const protocol = result.url.startsWith('https:') ? https : http;
-      await new Promise((resolve) => {
-        const req = protocol.get(result.url, (res) => {
-          res.on('data', () => {});
-          res.on('end', resolve);
-        });
-        req.on('error', resolve);
-        req.setTimeout(3000, resolve);
-      });
-    } catch (error) {
-      console.log('Page warmup failed:', error.message);
-    }
-    
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);

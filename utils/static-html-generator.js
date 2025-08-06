@@ -26,37 +26,50 @@ class StaticHTMLGenerator {
     return `${this.baseUrl}/images/${imageIndex}.png?t=${this.timestamp}&v=${Math.random().toString(36).slice(2, 11)}`;
   }
 
-  async warmupImage(imageUrl) {
-    return new Promise((resolve) => {
-      const protocol = imageUrl.startsWith('https:') ? https : http;
+  async simulateTwitterValidator(pageUrl, imageUrl) {
+    try {
+      const protocol = pageUrl.startsWith('https:') ? https : http;
       
-      const req = protocol.get(imageUrl, (res) => {
-        res.on('data', () => {});
-        res.on('end', () => {
-          console.log(`Image warmed up: ${imageUrl}`);
-          resolve(true);
+      await new Promise((resolve, reject) => {
+        const req = protocol.request(pageUrl, { method: 'HEAD' }, (res) => {
+          resolve();
+        });
+        req.on('error', reject);
+        req.setTimeout(3000, () => {
+          req.destroy();
+          resolve();
+        });
+        req.end();
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const imageProtocol = imageUrl.startsWith('https:') ? https : http;
+      await new Promise((resolve, reject) => {
+        const req = imageProtocol.get(imageUrl, (res) => {
+          res.on('data', () => {});
+          res.on('end', resolve);
+        });
+        req.on('error', resolve);
+        req.setTimeout(5000, () => {
+          req.destroy();
+          resolve();
         });
       });
       
-      req.on('error', (err) => {
-        console.error(`Error warming up image: ${err.message}`);
-        resolve(false);
-      });
-      
-      req.setTimeout(5000, () => {
-        req.destroy();
-        console.log('Image warmup timeout');
-        resolve(false);
-      });
-    });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   async generatePost() {
     const pageData = this.getPageData();
-    
-    await this.warmupImage(pageData.imageUrl);
-    
     const html = this.buildHTML(pageData);
+    
+    setTimeout(() => {
+      this.simulateTwitterValidator(pageData.pageUrl, pageData.imageUrl);
+    }, 1000);
     
     return {
       html,
@@ -66,7 +79,7 @@ class StaticHTMLGenerator {
   }
 
   async generateRandomPost() {
-   const randomSlug = this.generateRandomSlug();
+    const randomSlug = this.generateRandomSlug();
     const randomUsername = this.generateRandomUsername();
     const randomImageId = Math.floor(Math.random() * 3) + 1;
     const timestamp = Date.now();
@@ -76,11 +89,7 @@ class StaticHTMLGenerator {
     this.imageId = randomImageId.toString();
     this.timestamp = timestamp;
     
-    const result = await this.generatePost();
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    return result;
+    return await this.generatePost();
   }
 
   generateRandomSlug() {
