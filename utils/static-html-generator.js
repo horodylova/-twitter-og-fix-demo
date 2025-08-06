@@ -1,4 +1,3 @@
-const fs = require('fs').promises;
 const path = require('path');
 
 class StaticHTMLGenerator {
@@ -15,7 +14,7 @@ class StaticHTMLGenerator {
   getDynamicImageUrl() {
     const imageId = parseInt(this.imageId) || 1;
     const imageIndex = ((imageId - 1) % 3) + 1;
-    return `${this.baseUrl}/images/${imageIndex}.png?1`;
+    return `${this.baseUrl}/images/${imageIndex}.png`;
   }
 
   generateDynamicUrl() {
@@ -189,3 +188,4 @@ class StaticHTMLGenerator {
 }
 
 module.exports = StaticHTMLGenerator;
+

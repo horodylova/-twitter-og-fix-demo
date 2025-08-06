@@ -43,8 +43,14 @@ app.get('/post/:slug/:username/:imageId', async (req, res) => {
     const generator = new StaticHTMLGenerator({ slug, username, imageId });
     const result = await generator.generatePost();
 
+    const ua = req.get('User-Agent') || '';
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 's-maxage=1, stale-while-revalidate');
+
+    if (/twitterbot|facebookexternalhit|linkedinbot|Slackbot-LinkExpanding/i.test(ua)) {
+      return res.send(result.html);
+    }
+
     res.send(result.html);
   } catch (error) {
     console.error('Error generating dynamic post:', error);
@@ -56,7 +62,6 @@ app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
-
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
@@ -74,39 +79,13 @@ app.get('/', (req, res) => {
     <head>
         <title>🐦 Twitter Card Demo</title>
         <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                max-width: 600px; 
-                margin: 50px auto; 
-                padding: 20px;
-                background: #f5f5f5;
-            }
-            .container {
-                background: white;
-                padding: 40px;
-                border-radius: 20px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-                text-align: center;
-            }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+            .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
             h1 { color: #333; margin-bottom: 10px; }
             p { color: #666; margin-bottom: 30px; }
-            button {
-                background: #1da1f2;
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 50px;
-                font-size: 16px;
-                cursor: pointer;
-                margin: 10px;
-            }
+            button { background: #1da1f2; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-size: 16px; cursor: pointer; margin: 10px; }
             button:hover { background: #0d8bd9; }
-            .result {
-                margin-top: 20px;
-                padding: 15px;
-                border-radius: 10px;
-                display: none;
-            }
+            .result { margin-top: 20px; padding: 15px; border-radius: 10px; display: none; }
             .success { background: #d4edda; color: #155724; }
             .error { background: #f8d7da; color: #721c24; }
         </style>
@@ -115,24 +94,21 @@ app.get('/', (req, res) => {
         <div class="container">
             <h1>🐦 Twitter Card Demo</h1>
             <p>Create a page with your image for Twitter sharing</p>
-            
             <button onclick="createPage()">Create Page</button>
-            
             <div id="result" class="result"></div>
-            
             <script>
                 async function createPage() {
                     const resultDiv = document.getElementById('result');
                     resultDiv.style.display = 'block';
                     resultDiv.className = 'result';
                     resultDiv.innerHTML = 'Creating page...';
-                    
+
                     try {
                         const response = await fetch('/api/create-post', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                         });
-                        
+
                         if (response.ok) {
                             const data = await response.json();
                             resultDiv.className = 'result success';
@@ -158,7 +134,7 @@ app.get('/', (req, res) => {
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
   });
 }
 
