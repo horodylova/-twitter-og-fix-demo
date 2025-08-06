@@ -1,3 +1,39 @@
+const express = require('express');
+const path = require('path');
+const StaticHTMLGenerator = require('./utils/static-html-generator');
+
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use(express.static('public'));
+app.use(express.json());
+
+app.get('/post', async (req, res) => {
+  try {
+    const generator = new StaticHTMLGenerator();
+    const result = await generator.generatePost();
+    res.set('Content-Type', 'text/html');
+    res.send(result.html);
+  } catch (error) {
+    console.error('Error generating post:', error);
+    res.status(500).send('Error generating page');
+  }
+});
+
+app.post('/api/create-post', async (req, res) => {
+  try {
+    const generator = new StaticHTMLGenerator();
+    const result = await generator.generatePost();
+    res.json(result);
+  } catch (error) {
+    console.error('Error creating post:', error);
+    res.status(500).json({ error: 'Failed to create post' });
+  }
+});
+
 app.get('/', (req, res) => {
   const baseUrl = process.env.BASE_URL || 
                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
@@ -88,4 +124,8 @@ app.get('/', (req, res) => {
     </body>
     </html>
   `);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
