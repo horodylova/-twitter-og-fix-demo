@@ -1,3 +1,6 @@
+const fs = require('fs').promises;
+const path = require('path');
+
 class StaticHTMLGenerator {
   constructor(options = {}) {
     const PORT = process.env.PORT || 3000;
@@ -10,58 +13,39 @@ class StaticHTMLGenerator {
   }
 
   getDynamicImageUrl() {
-    try {
-      const imageId = parseInt(this.imageId) || 1;
-      const imageIndex = ((imageId - 1) % 3) + 1;
-      return `${this.baseUrl}/images/${imageIndex}.png`;
-    } catch (error) {
-      return `${this.baseUrl}/images/1.png`;
-    }
+    const imageId = parseInt(this.imageId) || 1;
+    const imageIndex = ((imageId - 1) % 3) + 1;
+    return `${this.baseUrl}/images/${imageIndex}.png?1`;
   }
 
   generateDynamicUrl() {
-    try {
-      if (this.slug && this.username && this.imageId) {
-        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
-      }
-      return `${this.baseUrl}/post`;
-    } catch (error) {
-      return `${this.baseUrl}/post`;
+    if (this.slug && this.username && this.imageId) {
+      return `${this.baseUrl}/post/${this.slug}/${this.username}/${this.imageId}`;
     }
+    return `${this.baseUrl}/post`;
   }
 
   async generatePost() {
-    try {
-      const pageData = this.getPageData();
-      const html = this.buildHTML(pageData);
-      
-      return {
-        html,
-        slug: this.slug,
-        username: this.username,
-        imageId: this.imageId,
-        url: this.generateDynamicUrl(),
-        success: true
-      };
-    } catch (error) {
-      throw new Error('Failed to generate post');
-    }
+    const pageData = this.getPageData();
+    const html = this.buildHTML(pageData);
+    
+    return {
+      html,
+      url: this.generateDynamicUrl(),
+      success: true
+    };
   }
 
   async generateRandomPost() {
-    try {
-      const randomSlug = this.generateRandomSlug();
-      const randomUsername = this.generateRandomUsername();
-      const randomImageId = Math.floor(Math.random() * 3) + 1;
-      
-      this.slug = randomSlug;
-      this.username = randomUsername;
-      this.imageId = randomImageId.toString();
-      
-      return await this.generatePost();
-    } catch (error) {
-      throw new Error('Failed to generate random post');
-    }
+    const randomSlug = this.generateRandomSlug();
+    const randomUsername = this.generateRandomUsername();
+    const randomImageId = Math.floor(Math.random() * 3) + 1;
+    
+    this.slug = randomSlug;
+    this.username = randomUsername;
+    this.imageId = randomImageId.toString();
+    
+    return await this.generatePost();
   }
 
   generateRandomSlug() {
@@ -116,6 +100,7 @@ class StaticHTMLGenerator {
   <meta property="og:image" content="${data.imageUrl}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Special Offers">
   
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${data.title}">
