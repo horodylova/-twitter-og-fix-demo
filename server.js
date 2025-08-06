@@ -49,6 +49,7 @@ app.get('/post/:id', async (req, res) => {
     
     if (isBot) {
       console.log('Bot detected:', userAgent);
+      await new Promise(resolve => setTimeout(resolve, 100));
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
