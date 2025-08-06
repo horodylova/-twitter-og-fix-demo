@@ -36,10 +36,14 @@ app.post('/api/create-post', async (req, res) => {
 
     const postId = `${result.slug}-${result.username}-${result.imageId}`;
 
-    if (kv instanceof Map) {
-      kv.set(`post:${postId}`, result.html);
-    } else {
-      await kv.set(`post:${postId}`, result.html, { ex: 60 * 60 * 24 * 30 });
+    try {
+      if (kv instanceof Map) {
+        kv.set(`post:${postId}`, result.html);
+      } else {
+        await kv.set(`post:${postId}`, result.html, { ex: 60 * 60 * 24 * 30 });
+      }
+    } catch (kvError) {
+      console.warn('KV storage error:', kvError.message);
     }
 
     result.url = `${generator.baseUrl}/post/${postId}`;
@@ -53,14 +57,21 @@ app.post('/api/create-post', async (req, res) => {
 app.get('/post/:id', async (req, res) => {
   try {
     let html;
-    if (kv instanceof Map) {
-      html = kv.get(`post:${req.params.id}`);
-    } else {
-      html = await kv.get(`post:${req.params.id}`);
+    try {
+      if (kv instanceof Map) {
+        html = kv.get(`post:${req.params.id}`);
+      } else {
+        html = await kv.get(`post:${req.params.id}`);
+      }
+    } catch (kvError) {
+      console.warn('KV storage error:', kvError.message);
+      html = null;
     }
     
     if (!html) {
-      return res.status(404).send('Post not found');
+      const generator = new StaticHTMLGenerator();
+      const fallbackResult = await generator.generateRandomPost();
+      html = fallbackResult.html;
     }
 
     res.set('Content-Type', 'text/html; charset=utf-8');
@@ -112,8 +123,9 @@ app.get('/', (req, res) => {
                             headers: { 'Content-Type': 'application/json' }
                         });
 
-                        if (response.ok) {
-                            const data = await response.json();
+                        const data = await response.json();
+                        
+                        if (response.ok && data.url) {
                             resultDiv.className = 'result success';
                             resultDiv.innerHTML = \`
                                 ✅ Page created successfully!<br>
@@ -121,7 +133,7 @@ app.get('/', (req, res) => {
                                 <a href="https://twitter.com/intent/tweet?url=\${encodeURIComponent(data.url)}" target="_blank">Share on Twitter</a>
                             \`;
                         } else {
-                            throw new Error('Failed to create page');
+                            throw new Error(data.error || 'Failed to create page');
                         }
                     } catch (error) {
                         resultDiv.className = 'result error';

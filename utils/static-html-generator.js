@@ -10,42 +10,58 @@ class StaticHTMLGenerator {
   }
 
   getDynamicImageUrl() {
-    const imageId = parseInt(this.imageId) || 1;
-    const imageIndex = ((imageId - 1) % 3) + 1;
-    return `${this.baseUrl}/images/${imageIndex}.png`;
+    try {
+      const imageId = parseInt(this.imageId) || 1;
+      const imageIndex = ((imageId - 1) % 3) + 1;
+      return `${this.baseUrl}/images/${imageIndex}.png`;
+    } catch (error) {
+      return `${this.baseUrl}/images/1.png`;
+    }
   }
 
   generateDynamicUrl() {
-    if (this.slug && this.username && this.imageId) {
-      return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
+    try {
+      if (this.slug && this.username && this.imageId) {
+        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
+      }
+      return `${this.baseUrl}/post`;
+    } catch (error) {
+      return `${this.baseUrl}/post`;
     }
-    return `${this.baseUrl}/post`;
   }
 
   async generatePost() {
-    const pageData = this.getPageData();
-    const html = this.buildHTML(pageData);
-    
-    return {
-      html,
-      slug: this.slug,
-      username: this.username,
-      imageId: this.imageId,
-      url: this.generateDynamicUrl(),
-      success: true
-    };
+    try {
+      const pageData = this.getPageData();
+      const html = this.buildHTML(pageData);
+      
+      return {
+        html,
+        slug: this.slug,
+        username: this.username,
+        imageId: this.imageId,
+        url: this.generateDynamicUrl(),
+        success: true
+      };
+    } catch (error) {
+      throw new Error('Failed to generate post');
+    }
   }
 
   async generateRandomPost() {
-    const randomSlug = this.generateRandomSlug();
-    const randomUsername = this.generateRandomUsername();
-    const randomImageId = Math.floor(Math.random() * 3) + 1;
-    
-    this.slug = randomSlug;
-    this.username = randomUsername;
-    this.imageId = randomImageId.toString();
-    
-    return await this.generatePost();
+    try {
+      const randomSlug = this.generateRandomSlug();
+      const randomUsername = this.generateRandomUsername();
+      const randomImageId = Math.floor(Math.random() * 3) + 1;
+      
+      this.slug = randomSlug;
+      this.username = randomUsername;
+      this.imageId = randomImageId.toString();
+      
+      return await this.generatePost();
+    } catch (error) {
+      throw new Error('Failed to generate random post');
+    }
   }
 
   generateRandomSlug() {
