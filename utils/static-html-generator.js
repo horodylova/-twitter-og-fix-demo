@@ -13,39 +13,58 @@ class StaticHTMLGenerator {
   }
 
   getDynamicImageUrl() {
-    const imageId = parseInt(this.imageId) || 1;
-    const imageIndex = ((imageId - 1) % 3) + 1;
-    return `${this.baseUrl}/images/${imageIndex}.png?1`;
+    try {
+      const imageId = parseInt(this.imageId) || 1;
+      const imageIndex = ((imageId - 1) % 3) + 1;
+      return `${this.baseUrl}/images/${imageIndex}.png`;
+    } catch (error) {
+      return `${this.baseUrl}/images/1.png`;
+    }
   }
 
   generateDynamicUrl() {
-    if (this.slug && this.username && this.imageId) {
-      return `${this.baseUrl}/post/${this.slug}/${this.username}/${this.imageId}`;
+    try {
+      if (this.slug && this.username && this.imageId) {
+        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
+      }
+      return `${this.baseUrl}/post`;
+    } catch (error) {
+      return `${this.baseUrl}/post`;
     }
-    return `${this.baseUrl}/post`;
   }
 
   async generatePost() {
-    const pageData = this.getPageData();
-    const html = this.buildHTML(pageData);
-    
-    return {
-      html,
-      url: this.generateDynamicUrl(),
-      success: true
-    };
+    try {
+      const pageData = this.getPageData();
+      const html = this.buildHTML(pageData);
+      
+      return {
+        html,
+        slug: this.slug,
+        username: this.username,
+        imageId: this.imageId,
+        url: this.generateDynamicUrl(),
+        success: true
+      };
+    } catch (error) {
+      throw new Error('Failed to generate post');
+    }
   }
 
   async generateRandomPost() {
-    const randomSlug = this.generateRandomSlug();
-    const randomUsername = this.generateRandomUsername();
-    const randomImageId = Math.floor(Math.random() * 3) + 1;
-    
-    this.slug = randomSlug;
-    this.username = randomUsername;
-    this.imageId = randomImageId.toString();
-    
-    return await this.generatePost();
+    try {
+      const randomSlug = this.generateRandomSlug();
+      const randomUsername = this.generateRandomUsername();
+      const randomImageId = Math.floor(Math.random() * 3) + 1;
+      
+      this.slug = randomSlug;
+      this.username = randomUsername;
+      this.imageId = randomImageId.toString();
+      
+      return await this.generatePost();
+    } catch (error) {
+      throw new Error('Failed to generate random post');
+    }
   }
 
   generateRandomSlug() {
@@ -74,12 +93,14 @@ class StaticHTMLGenerator {
   getPageData() {
     const pageUrl = this.generateDynamicUrl();
     const imageUrl = this.getDynamicImageUrl();
+    const timestamp = Date.now();
     
     return {
       title: 'Special Offer - Limited Time',
       description: 'Amazing opportunity just for you! Get exclusive access to our premium service.',
-      imageUrl,
-      pageUrl
+      imageUrl: `${imageUrl}?v=${timestamp}`,
+      pageUrl,
+      timestamp
     };
   }
 
@@ -89,6 +110,9 @@ class StaticHTMLGenerator {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   
   <title>${data.title}</title>
   <meta name="description" content="${data.description}">
@@ -98,14 +122,25 @@ class StaticHTMLGenerator {
   <meta property="og:title" content="${data.title}">
   <meta property="og:description" content="${data.description}">
   <meta property="og:image" content="${data.imageUrl}">
+  <meta property="og:image:url" content="${data.imageUrl}">
+  <meta property="og:image:secure_url" content="${data.imageUrl}">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="${data.title}">
   <meta property="og:site_name" content="Special Offers">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:updated_time" content="${new Date().toISOString()}">
   
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@yoursite">
+  <meta name="twitter:creator" content="@yoursite">
   <meta name="twitter:title" content="${data.title}">
   <meta name="twitter:description" content="${data.description}">
   <meta name="twitter:image" content="${data.imageUrl}">
+  <meta name="twitter:image:alt" content="${data.title}">
+  
+  <link rel="canonical" href="${data.pageUrl}">
   
   <style>
     body {
@@ -179,7 +214,7 @@ class StaticHTMLGenerator {
   <div class="container">
     <div class="badge">✅ Limited Offer</div>
     <h1>${data.title}</h1>
-    <img src="${data.imageUrl}" alt="${data.title}" class="hero-image">
+    <img src="${data.imageUrl.split('?')[0]}" alt="${data.title}" class="hero-image">
     <p class="description">${data.description}</p>
     <a href="#" class="cta-button">Get Started Now</a>
   </div>
