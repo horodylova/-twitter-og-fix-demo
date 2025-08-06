@@ -42,14 +42,23 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
+const processedUrls = new Set();
+
 app.get('/post/:id', async (req, res) => {
   try {
     const userAgent = req.get('User-Agent') || '';
     const isBot = isTwitterBot(userAgent);
+    const urlKey = req.params.id;
+    
+    if (isBot && !processedUrls.has(urlKey)) {
+      processedUrls.add(urlKey);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
     
     if (isBot) {
       console.log('Bot detected:', userAgent);
       res.set('Cache-Control', 'public, max-age=300');
+      res.set('ETag', `"${urlKey}"`);
     } else {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
