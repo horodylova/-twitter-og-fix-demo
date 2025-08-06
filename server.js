@@ -1,11 +1,13 @@
 const express = require('express');
 const path = require('path');
 const StaticHTMLGenerator = require('./utils/static-html-generator');
+const { kv } = require('@vercel/kv'); // Устанавливаем пакет: npm i @vercel/kv
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Static images
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.png')) {
@@ -13,9 +15,7 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
     } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
       res.set('Content-Type', 'image/jpeg');
     }
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
     res.set('Access-Control-Allow-Origin', '*');
   }
 }));
@@ -23,45 +23,18 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
 app.use(express.static('public'));
 app.use(express.json());
 
-app.get('/post', async (req, res) => {
-  try {
-    const generator = new StaticHTMLGenerator();
-    const result = await generator.generatePost();
-
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 's-maxage=1, stale-while-revalidate');
-    res.send(result.html);
-  } catch (error) {
-    console.error('Error generating post:', error);
-    res.status(500).send('Error generating page');
-  }
-});
-
-app.get('/post/:slug/:username/:imageId', async (req, res) => {
-  try {
-    const { slug, username, imageId } = req.params;
-    const generator = new StaticHTMLGenerator({ slug, username, imageId });
-    const result = await generator.generatePost();
-
-    const ua = req.get('User-Agent') || '';
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 's-maxage=1, stale-while-revalidate');
-
-    if (/twitterbot|facebookexternalhit|linkedinbot|Slackbot-LinkExpanding/i.test(ua)) {
-      return res.send(result.html);
-    }
-
-    res.send(result.html);
-  } catch (error) {
-    console.error('Error generating dynamic post:', error);
-    res.status(500).send('Error generating page');
-  }
-});
-
+// Создание поста и сохранение HTML в KV
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
+
+    const postId = `${result.slug}-${result.username}-${result.imageId}`;
+
+    // Сохраняем с TTL (например, 30 дней)
+    await kv.set(`post:${postId}`, result.html, { ex: 60 * 60 * 24 * 30 });
+
+    result.url = `${generator.baseUrl}/post/${postId}`;
     res.json(result);
   } catch (error) {
     console.error('Error creating post:', error);
@@ -69,6 +42,24 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
+// Отдача статичного HTML из KV
+app.get('/post/:id', async (req, res) => {
+  try {
+    const html = await kv.get(`post:${req.params.id}`);
+    if (!html) {
+      return res.status(404).send('Post not found');
+    }
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(html);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).send('Error loading post');
+  }
+});
+
+// Главная страница
 app.get('/', (req, res) => {
   const baseUrl = process.env.BASE_URL || 
                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);

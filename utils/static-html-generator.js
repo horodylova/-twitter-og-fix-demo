@@ -1,5 +1,3 @@
-const path = require('path');
-
 class StaticHTMLGenerator {
   constructor(options = {}) {
     const PORT = process.env.PORT || 3000;
@@ -19,7 +17,7 @@ class StaticHTMLGenerator {
 
   generateDynamicUrl() {
     if (this.slug && this.username && this.imageId) {
-      return `${this.baseUrl}/post/${this.slug}/${this.username}/${this.imageId}`;
+      return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
     }
     return `${this.baseUrl}/post`;
   }
@@ -30,6 +28,9 @@ class StaticHTMLGenerator {
     
     return {
       html,
+      slug: this.slug,
+      username: this.username,
+      imageId: this.imageId,
       url: this.generateDynamicUrl(),
       success: true
     };
@@ -188,4 +189,5 @@ class StaticHTMLGenerator {
 }
 
 module.exports = StaticHTMLGenerator;
+
 
