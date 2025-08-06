@@ -25,11 +25,11 @@ class StaticHTMLGenerator {
   generateDynamicUrl() {
     try {
       if (this.slug && this.username && this.imageId) {
-        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
+        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}?v=1`;
       }
-      return `${this.baseUrl}/post`;
+      return `${this.baseUrl}/post?v=1`;
     } catch (error) {
-      return `${this.baseUrl}/post`;
+      return `${this.baseUrl}/post?v=1`;
     }
   }
 
