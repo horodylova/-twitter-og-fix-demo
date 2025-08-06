@@ -35,7 +35,6 @@ app.post('/api/create-post', async (req, res) => {
     const generator = new StaticHTMLGenerator();
     const result = await generator.generateRandomPost();
     
-    // Проверяем что страница реально отвечает правильным HTML
     let pageReady = false;
     let attempts = 0;
     const maxAttempts = 5;
@@ -52,7 +51,6 @@ app.post('/api/create-post', async (req, res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
-              // Проверяем что ответ содержит мета-теги
               if (data.includes('og:title') && data.includes('twitter:card')) {
                 pageReady = true;
                 console.log(`Page ready after ${attempts + 1} attempts`);
