@@ -9,7 +9,6 @@ class StaticHTMLGenerator {
     this.slug = options.slug || null;
     this.username = options.username || null;
     this.imageId = options.imageId || '1';
-    this.timestamp = options.timestamp || Date.now();
   }
 
   generateDynamicUrl() {
@@ -21,7 +20,7 @@ class StaticHTMLGenerator {
 
   getDynamicImageUrl() {
     const imageIndex = parseInt(this.imageId) % 3 + 1;
-    return `${this.baseUrl}/images/${imageIndex}.png?t=${this.timestamp}&v=${Math.random().toString(36).slice(2, 11)}`;
+    return `${this.baseUrl}/images/${imageIndex}.png?1`;
   }
 
   async generatePost() {
@@ -39,12 +38,10 @@ class StaticHTMLGenerator {
     const randomSlug = this.generateRandomSlug();
     const randomUsername = this.generateRandomUsername();
     const randomImageId = Math.floor(Math.random() * 3) + 1;
-    const timestamp = Date.now();
     
     this.slug = randomSlug;
     this.username = randomUsername;
     this.imageId = randomImageId.toString();
-    this.timestamp = timestamp;
     
     return await this.generatePost();
   }
