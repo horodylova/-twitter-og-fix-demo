@@ -21,8 +21,10 @@ app.use('/images', express.static(path.join(__dirname, 'public/images'), {
     } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
       res.set('Content-Type', 'image/jpeg');
     }
-    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.set('Cache-Control', 'public, max-age=86400');
     res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   }
 }));
 
@@ -75,7 +77,8 @@ app.get('/post/:id', async (req, res) => {
     }
 
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.set('X-Robots-Tag', 'index, follow');
     res.send(html);
   } catch (error) {
     console.error('Error fetching post:', error);
