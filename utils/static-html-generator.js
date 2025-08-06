@@ -1,5 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 class StaticHTMLGenerator {
   constructor(options = {}) {
@@ -24,8 +26,36 @@ class StaticHTMLGenerator {
     return `${this.baseUrl}/images/${imageIndex}.png?t=${this.timestamp}&v=${Math.random().toString(36).slice(2, 11)}`;
   }
 
+  async warmupImage(imageUrl) {
+    return new Promise((resolve) => {
+      const protocol = imageUrl.startsWith('https:') ? https : http;
+      
+      const req = protocol.get(imageUrl, (res) => {
+        res.on('data', () => {});
+        res.on('end', () => {
+          console.log(`Image warmed up: ${imageUrl}`);
+          resolve(true);
+        });
+      });
+      
+      req.on('error', (err) => {
+        console.error(`Error warming up image: ${err.message}`);
+        resolve(false);
+      });
+      
+      req.setTimeout(5000, () => {
+        req.destroy();
+        console.log('Image warmup timeout');
+        resolve(false);
+      });
+    });
+  }
+
   async generatePost() {
     const pageData = this.getPageData();
+    
+    await this.warmupImage(pageData.imageUrl);
+    
     const html = this.buildHTML(pageData);
     
     return {
