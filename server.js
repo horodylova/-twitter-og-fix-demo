@@ -52,9 +52,9 @@ app.get('/post/:id', async (req, res) => {
     }
     
     const parts = req.params.id.split('-');
-    const slug = parts[0];
-    const username = parts[1];
-    const imageId = parts[2];
+    const slug = parts[0] || 'default';
+    const username = parts[1] || 'user';
+    const imageId = parts[2] || '1';
     
     const generator = new StaticHTMLGenerator({ slug, username, imageId });
     const result = await generator.generatePost();
