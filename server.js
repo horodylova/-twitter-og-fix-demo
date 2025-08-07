@@ -26,7 +26,11 @@ function isTwitterBot(userAgent) {
   return botPatterns.some(pattern => pattern.test(userAgent));
 }
 
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+  setHeaders: (res, path) => {
+    res.set('Cache-Control', 'no-cache');
+  }
+}));
 app.use(express.static('public'));
 app.use(express.json());
 
@@ -61,6 +65,8 @@ app.get('/post/:id', async (req, res) => {
       res.set('ETag', `"${urlKey}"`);
     } else {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
     }
     
     const parts = req.params.id.split('-');

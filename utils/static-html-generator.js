@@ -16,9 +16,11 @@ class StaticHTMLGenerator {
     try {
       const imageId = parseInt(this.imageId) || 1;
       const imageIndex = ((imageId - 1) % 3) + 1;
-      return `${this.baseUrl}/images/${imageIndex}.png`;
+      const timestamp = Date.now();
+      return `${this.baseUrl}/images/${imageIndex}.png?v=${timestamp}`;
     } catch (error) {
-      return `${this.baseUrl}/images/1.png`;
+      const timestamp = Date.now();
+      return `${this.baseUrl}/images/1.png?v=${timestamp}`;
     }
   }
 
