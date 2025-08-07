@@ -47,14 +47,11 @@ app.get('/post/:id', async (req, res) => {
     const userAgent = req.get('User-Agent') || '';
     const isBot = isTwitterBot(userAgent);
     
-    if (isBot) {
-      console.log('Bot detected:', userAgent);
-    }
-    
     const parts = req.params.id.split('-');
+    
     const slug = parts[0] || 'default';
     const username = parts[1] || 'user';
-    const imageId = parts[2] || '1';
+    const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
     
     const generator = new StaticHTMLGenerator({ slug, username, imageId });
     const result = await generator.generatePost();

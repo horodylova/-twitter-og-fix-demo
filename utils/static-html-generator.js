@@ -14,9 +14,17 @@ class StaticHTMLGenerator {
 
   getDynamicImageUrl() {
     try {
-      const imageId = parseInt(this.imageId) || 1;
+      let imageId = 1;
+      if (typeof this.imageId === 'string' && this.imageId.includes('-')) {
+        const parts = this.imageId.split('-');
+        imageId = parseInt(parts[parts.length - 1]) || 1;
+      } else {
+        imageId = parseInt(this.imageId) || 1;
+      }
+      
       const imageIndex = ((imageId - 1) % 3) + 1;
-      return `${this.baseUrl}/images/${imageIndex}.png`;
+      const imageUrl = `${this.baseUrl}/images/${imageIndex}.png`;
+      return imageUrl;
     } catch (error) {
       return `${this.baseUrl}/images/1.png`;
     }
