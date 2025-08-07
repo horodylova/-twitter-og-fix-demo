@@ -10,21 +10,9 @@ const PORT = process.env.PORT || 3000;
 
 function isTwitterBot(userAgent) {
  const botPatterns = [
-   /twitterbot/i,
-   /facebookexternalhit/i,
-   /linkedinbot/i,
-   /whatsapp/i,
-   /telegrambot/i,
-   /slackbot/i,
-   /discordbot/i,
-   /skypebot/i,
-   /applebot/i,
-   /googlebot/i,
-   /bingbot/i,
-   /yandexbot/i,
-   /baiduspider/i
+   /twitterbot/i
  ];
-  return botPatterns.some(pattern => pattern.test(userAgent));
+ return botPatterns.some(pattern => pattern.test(userAgent));
 }
 
 
@@ -61,9 +49,7 @@ app.get('/post/:id', async (req, res) => {
     const result = await generator.generatePost();
     
     res.set({
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
-      'X-Robots-Tag': 'index, follow'
+      'Content-Type': 'text/html; charset=utf-8'
     });
     
     res.send(result.html);
