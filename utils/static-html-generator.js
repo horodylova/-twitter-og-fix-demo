@@ -25,7 +25,8 @@ class StaticHTMLGenerator {
      }
     
      const imageIndex = ((imageId - 1) % 3) + 1;
-     const imageUrl = `${this.baseUrl}/images/${imageIndex}.png`;
+     const uniqueParam = `${this.slug}-${this.username}-${this.imageId}`;
+     const imageUrl = `${this.baseUrl}/images/${imageIndex}.png?id=${encodeURIComponent(uniqueParam)}`;
      return imageUrl;
    } catch (error) {
      return `${this.baseUrl}/images/1.png`;
