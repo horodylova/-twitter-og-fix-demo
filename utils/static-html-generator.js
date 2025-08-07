@@ -13,21 +13,13 @@ class StaticHTMLGenerator {
   }
 
   getDynamicImageUrl() {
-    try {
-      let imageId = 1;
-      if (typeof this.imageId === 'string' && this.imageId.includes('-')) {
-        const parts = this.imageId.split('-');
-        imageId = parseInt(parts[parts.length - 1]) || 1;
-      } else {
-        imageId = parseInt(this.imageId) || 1;
-      }
-      
-      const imageIndex = ((imageId - 1) % 3) + 1;
-      const imageUrl = `${this.baseUrl}/images/${imageIndex}.png`;
-      return imageUrl;
-    } catch (error) {
-      return `${this.baseUrl}/images/1.png`;
-    }
+    const imageIndex = this.imageId.includes('-') 
+      ? parseInt(this.imageId.split('-')[1]) || 1
+      : parseInt(this.imageId) || 1;
+    
+    const validIndex = Math.max(1, Math.min(imageIndex, 3));
+    const timestamp = Date.now();
+    return `${this.baseUrl}/images/${validIndex}.png?v=${timestamp}`;
   }
 
   generateDynamicUrl() {
