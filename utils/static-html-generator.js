@@ -65,11 +65,17 @@ class StaticHTMLGenerator {
       const randomUsername = this.generateRandomUsername();
       const randomImageId = Math.floor(Math.random() * 3) + 1;
       
+      console.log('🎲 Generated random values:', { randomSlug, randomUsername, randomImageId });
+      
       this.slug = randomSlug;
       this.username = randomUsername;
       this.imageId = randomImageId.toString();
       
-      return await this.generatePost();
+      const result = await this.generatePost();
+      console.log('📄 Generated URL:', result.url);
+      console.log('🖼️ Image URL in HTML:', this.getDynamicImageUrl());
+      
+      return result;
     } catch (error) {
       throw new Error('Failed to generate random post');
     }
