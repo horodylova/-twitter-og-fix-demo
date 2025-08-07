@@ -9,7 +9,17 @@ class StaticHTMLGenerator {
     
     this.slug = options.slug || null;
     this.username = options.username || null;
-    this.imageId = options.imageId || null; // Изменено с '1' на null
+    this.imageId = options.imageId || '1';
+  }
+
+  getDynamicImageUrl() {
+    try {
+      const imageId = parseInt(this.imageId) || 1;
+      const imageIndex = ((imageId - 1) % 3) + 1;
+      return `${this.baseUrl}/images/${imageIndex}.png`;
+    } catch (error) {
+      return `${this.baseUrl}/images/1.png`;
+    }
   }
 
   generateDynamicUrl() {
@@ -47,32 +57,13 @@ class StaticHTMLGenerator {
       const randomUsername = this.generateRandomUsername();
       const randomImageId = Math.floor(Math.random() * 3) + 1;
       
-      // Устанавливаем все значения перед генерацией
       this.slug = randomSlug;
       this.username = randomUsername;
       this.imageId = randomImageId.toString();
       
-      console.log('Generated random values:', {
-        slug: this.slug,
-        username: this.username,
-        imageId: this.imageId
-      });
-      
       return await this.generatePost();
     } catch (error) {
       throw new Error('Failed to generate random post');
-    }
-  }
-
-  getDynamicImageUrl() {
-    try {
-      // Используем установленный imageId или генерируем новый
-      const imageId = this.imageId ? parseInt(this.imageId) : Math.floor(Math.random() * 3) + 1;
-      console.log('Using imageId:', imageId, 'from this.imageId:', this.imageId);
-      return `${this.baseUrl}/images/${imageId}.png`;
-    } catch (error) {
-      console.error('Error in getDynamicImageUrl:', error);
-      return `${this.baseUrl}/images/1.png`;
     }
   }
 
