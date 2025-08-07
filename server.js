@@ -47,25 +47,30 @@ app.post('/api/create-post', async (req, res) => {
 
 
 app.get('/post/:id', async (req, res) => {
- try {
-   const userAgent = req.get('User-Agent') || '';
-   const isBot = isTwitterBot(userAgent);
-  
-   const parts = req.params.id.split('-');
-  
-   const slug = parts[0] || 'default';
-   const username = parts[1] || 'user';
-   const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
-  
-   const generator = new StaticHTMLGenerator({ slug, username, imageId });
-   const result = await generator.generatePost();
-  
-   res.set('Content-Type', 'text/html; charset=utf-8');
-   res.send(result.html);
- } catch (error) {
-   console.error('Error fetching post:', error);
-   res.status(500).send('Error loading post');
- }
+  try {
+    const userAgent = req.get('User-Agent') || '';
+    const isBot = isTwitterBot(userAgent);
+    
+    const parts = req.params.id.split('-');
+    
+    const slug = parts[0] || 'default';
+    const username = parts[1] || 'user';
+    const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
+    
+    const generator = new StaticHTMLGenerator({ slug, username, imageId });
+    const result = await generator.generatePost();
+    
+    res.set({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=300',
+      'X-Robots-Tag': 'index, follow'
+    });
+    
+    res.send(result.html);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).send('Error loading post');
+  }
 });
 
 
