@@ -30,6 +30,7 @@ class StaticHTMLGenerator {
    } catch (error) {
      return `${this.baseUrl}/images/1.png`;
    }
+
  }
 
 
