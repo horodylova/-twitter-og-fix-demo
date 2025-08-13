@@ -17,19 +17,18 @@ function getBaseUrl() {
          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${port}`);
 }
 
-// --- static
+ 
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   immutable: true,
   maxAge: '31536000',
   setHeaders(res) {
-    // длинный кэш только для картинок (X это любит)
+ 
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   }
 }));
 app.use(express.static('public'));
 app.use(express.json());
-
-// --- API: создать страницу (твоя логика, без изменений)
+ 
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
@@ -41,41 +40,43 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
-// --- Динамическая страница поста (добавлены только заголовки кэша для Twitterbot)
+ 
 app.get('/post/:id', async (req, res) => {
   try {
-    const userAgent = req.get('User-Agent') || '';
-    const isBot = isTwitterBot(userAgent);
+    const ua = req.get('User-Agent') || '';
+    const isBot = isTwitterBot(ua); 
 
+ 
     const parts = (req.params.id || '').split('-');
     const slug = parts[0] || 'default';
     const username = parts[1] || 'user';
     const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
 
+    
     const generator = new StaticHTMLGenerator({ slug, username, imageId });
     const result = await generator.generatePost();
-
+ 
     res.set('Content-Type', 'text/html; charset=utf-8');
-    // главное изменение варианта 1: боту не кэшируем HTML, людям можно чуть-чуть
     if (isBot) {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     } else {
       res.set('Cache-Control', 'public, max-age=60');
     }
 
-    res.send(result.html);
+    res.status(200).send(result.html);
   } catch (error) {
     console.error('Error fetching post:', error);
     res.status(500).send('Error loading post');
   }
 });
 
-// --- sitemap (минимальный; не меняет твою логику)
+
+ 
 app.get('/sitemap.xml', (req, res) => {
   try {
     const baseUrl = getBaseUrl();
     const now = new Date().toISOString();
-    // динамические URL у тебя «бесконечные», поэтому даём корневую страницу
+    
     const urls = [ `${baseUrl}/` ];
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
