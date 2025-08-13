@@ -1,143 +1,156 @@
-// utils/static-html-generator.js  (твоя логика; добавлены только OG-мета и абсолютность уже была)
 const fs = require('fs').promises;
 const path = require('path');
 
+
+
+
 class StaticHTMLGenerator {
-  constructor(options = {}) {
-    const PORT = process.env.PORT || 3000;
-    this.baseUrl = process.env.BASE_URL ||
-                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
-    this.slug = options.slug || null;
-    this.username = options.username || null;
-    this.imageId = options.imageId || '1';
-  }
+constructor(options = {}) {
+  const PORT = process.env.PORT || 3000;
+  this.baseUrl = process.env.BASE_URL ||
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${PORT}`);
+   this.slug = options.slug || null;
+  this.username = options.username || null;
+  this.imageId = options.imageId || '1';
+}
 
-  getDynamicImageUrl() {
-    try {
-      let imageId = 1;
-      if (typeof this.imageId === 'string' && this.imageId.includes('-')) {
-        const parts = this.imageId.split('-');
-        imageId = parseInt(parts[parts.length - 1]) || 1;
-      } else {
-        imageId = parseInt(this.imageId) || 1;
-      }
-      const imageIndex = ((imageId - 1) % 3) + 1;
-      const timestamp = Date.now();
-      const imageUrl = `${this.baseUrl}/images/${imageIndex}.png?v=${timestamp}`;
-      return imageUrl;
-    } catch (error) {
-      const timestamp = Date.now();
-      return `${this.baseUrl}/images/1.png?v=${timestamp}`;
+
+
+
+getDynamicImageUrl() {
+  try {
+    let imageId = 1;
+    if (typeof this.imageId === 'string' && this.imageId.includes('-')) {
+      const parts = this.imageId.split('-');
+      imageId = parseInt(parts[parts.length - 1]) || 1;
+    } else {
+      imageId = parseInt(this.imageId) || 1;
     }
+  
+    const imageIndex = ((imageId - 1) % 3) + 1;
+    const imageUrl = `${this.baseUrl}/images/${imageIndex}.png`;
+    return imageUrl;
+  } catch (error) {
+    return `${this.baseUrl}/images/1.png`;
   }
 
-  generateDynamicUrl() {
-    try {
-      if (this.slug && this.username && this.imageId) {
-        return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
-      }
-      return `${this.baseUrl}/post`;
-    } catch (error) {
-      return `${this.baseUrl}/post`;
+
+}
+
+
+
+
+generateDynamicUrl() {
+  try {
+    if (this.slug && this.username && this.imageId) {
+      return `${this.baseUrl}/post/${this.slug}-${this.username}-${this.imageId}`;
     }
+    return `${this.baseUrl}/post`;
+  } catch (error) {
+    return `${this.baseUrl}/post`;
   }
+}
 
-  async generatePost() {
-    try {
-      const pageData = this.getPageData();
-      const html = this.buildHTML(pageData);
 
-      return {
-        html,
-        slug: this.slug,
-        username: this.username,
-        imageId: this.imageId,
-        url: this.generateDynamicUrl(),
-        success: true
-      };
-    } catch (error) {
-      throw new Error('Failed to generate post');
-    }
-  }
 
-  async generateRandomPost() {
-    try {
-      const randomSlug = this.generateRandomSlug();
-      const randomUsername = this.generateRandomUsername();
-      const randomImageId = Math.floor(Math.random() * 3) + 1;
 
-      this.slug = randomSlug;
-      this.username = randomUsername;
-      this.imageId = randomImageId.toString();
-
-      return await this.generatePost();
-    } catch (error) {
-      throw new Error('Failed to generate random post');
-    }
-  }
-
-  generateRandomSlug() {
-    const slugs = [
-      'amazing-offer',
-      'special-deal',
-      'exclusive-access',
-      'limited-time',
-      'premium-service',
-      'best-opportunity'
-    ];
-    return slugs[Math.floor(Math.random() * slugs.length)];
-  }
-
-  generateRandomUsername() {
-    const usernames = [
-      'user123',
-      'customer456',
-      'member789',
-      'client001',
-      'subscriber999'
-    ];
-    return usernames[Math.floor(Math.random() * usernames.length)];
-  }
-
-  getPageData() {
-    const pageUrl = this.generateDynamicUrl();
-    const imageUrl = this.getDynamicImageUrl();
+async generatePost() {
+  try {
+    const pageData = this.getPageData();
+    const html = this.buildHTML(pageData);
+  
     return {
-      title: 'Special Offer - Limited Time',
-      description: 'Amazing opportunity just for you! Get exclusive access to our premium service.',
-      imageUrl,
-      pageUrl
+      html,
+      slug: this.slug,
+      username: this.username,
+      imageId: this.imageId,
+      url: this.generateDynamicUrl(),
+      success: true
     };
+  } catch (error) {
+    throw new Error('Failed to generate post');
   }
+}
 
-  buildHTML(data) {
-    return `<!DOCTYPE html>
+
+
+
+async generateRandomPost() {
+  try {
+    const randomSlug = this.generateRandomSlug();
+    const randomUsername = this.generateRandomUsername();
+    const randomImageId = Math.floor(Math.random() * 3) + 1;
+  
+    this.slug = randomSlug;
+    this.username = randomUsername;
+    this.imageId = randomImageId.toString();
+  
+    return await this.generatePost();
+  } catch (error) {
+    throw new Error('Failed to generate random post');
+  }
+}
+
+
+
+
+generateRandomSlug() {
+  const slugs = [
+    'amazing-offer',
+    'special-deal',
+    'exclusive-access',
+    'limited-time',
+    'premium-service',
+    'best-opportunity'
+  ];
+  return slugs[Math.floor(Math.random() * slugs.length)];
+}
+
+
+
+
+generateRandomUsername() {
+  const usernames = [
+    'user123',
+    'customer456',
+    'member789',
+    'client001',
+    'subscriber999'
+  ];
+  return usernames[Math.floor(Math.random() * usernames.length)];
+}
+
+
+
+
+getPageData() {
+  const pageUrl = this.generateDynamicUrl();
+  const imageUrl = this.getDynamicImageUrl();
+   return {
+    title: 'Special Offer - Limited Time',
+    description: 'Amazing opportunity just for you! Get exclusive access to our premium service.',
+    imageUrl,
+    pageUrl
+  };
+}
+
+
+
+
+buildHTML(data) {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${data.title}</title>
 <meta name="description" content="${data.description}">
-
-<!-- Open Graph (добавлено для стабильности) -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="${data.title}">
-<meta property="og:description" content="${data.description}">
-<meta property="og:image" content="${data.imageUrl}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:type" content="image/png">
-<meta property="og:url" content="${data.pageUrl}">
-
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${data.title}">
 <meta name="twitter:description" content="${data.description}">
 <meta name="twitter:image" content="${data.imageUrl}">
-<meta name="twitter:image:width" content="1200">
-<meta name="twitter:image:height" content="630">
-
 <link rel="canonical" href="${data.pageUrl}">
-<style>
+ <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
@@ -215,11 +228,13 @@ class StaticHTMLGenerator {
 </div>
 </body>
 </html>`;
-  }
+}
 }
 
-module.exports = StaticHTMLGenerator;
 
+
+
+module.exports = StaticHTMLGenerator;
 
 
 
