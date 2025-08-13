@@ -7,8 +7,6 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "/server.js" },
     { "src": "/images/(.*)", "dest": "/public/images/$1" },
-    { "src": "/robots.txt", "dest": "/public/robots.txt" },
-    { "src": "/sitemap.xml", "dest": "/server.js" },
     { "src": "/post/(.*)", "dest": "/server.js" },
     { "src": "/", "dest": "/server.js" }
   ]
