@@ -25,12 +25,11 @@ class StaticHTMLGenerator {
      }
     
      const imageIndex = ((imageId - 1) % 3) + 1;
-     const imageUrl = `${this.baseUrl}/images/${imageIndex}.png`;
+     const imageUrl = `${this.baseUrl}/images/${imageIndex}.jpg`;
      return imageUrl;
    } catch (error) {
-     return `${this.baseUrl}/images/1.png`;
+     return `${this.baseUrl}/images/1.jpg`;
    }
-
  }
 
 
