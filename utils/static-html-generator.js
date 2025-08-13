@@ -155,6 +155,10 @@ buildHTML(data) {
 <meta property="og:image:type" content="image/png">
 <meta property="og:url" content="${data.pageUrl}">
 
+<meta property="og:image" content="${data.imageUrl}">
+<meta property="og:image:secure_url" content="${data.imageUrl}">
+<meta property="og:image:alt" content="Promo image">
+
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${data.title}">
 <meta name="twitter:description" content="${data.description}">

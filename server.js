@@ -22,7 +22,14 @@ return botPatterns.some(pattern => pattern.test(userAgent));
 
 
 
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    }
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
 app.use(express.static('public'));
 app.use(express.json());
 
@@ -44,28 +51,30 @@ try {
 
 
 app.get('/post/:id', async (req, res) => {
- try {
-   const userAgent = req.get('User-Agent') || '';
-   const isBot = isTwitterBot(userAgent);
-  
-   const parts = req.params.id.split('-');
-  
-   const slug = parts[0] || 'default';
-   const username = parts[1] || 'user';
-   const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
-  
-   const generator = new StaticHTMLGenerator({ slug, username, imageId });
-   const result = await generator.generatePost();
-  
-   res.set({
-     'Content-Type': 'text/html; charset=utf-8'
-   });
-  
-   res.send(result.html);
- } catch (error) {
-   console.error('Error fetching post:', error);
-   res.status(500).send('Error loading post');
- }
+  try {
+    const userAgent = req.get('User-Agent') || '';
+    const isBot = isTwitterBot(userAgent);
+
+    const parts = req.params.id.split('-');
+    const slug = parts[0] || 'default';
+    const username = parts[1] || 'user';
+    const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
+
+    const generator = new StaticHTMLGenerator({ slug, username, imageId });
+    const result = await generator.generatePost();
+
+    res.set({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Vary': 'User-Agent',
+      'Cache-Control': isBot ? 'max-age=0, s-maxage=600' : 'max-age=0, s-maxage=60'
+    });
+
+    
+    res.send(result.html);
+  } catch (e) {
+    console.error('Error fetching post:', e);
+    res.status(500).send('Error loading post');
+  }
 });
 
 
