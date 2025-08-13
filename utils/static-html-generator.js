@@ -122,13 +122,17 @@ class StaticHTMLGenerator {
 <meta property="og:title" content="${data.title}">
 <meta property="og:description" content="${data.description}">
 <meta property="og:image" content="${data.imageUrl}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
 <meta property="og:url" content="${data.pageUrl}">
 
-<!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${data.title}">
 <meta name="twitter:description" content="${data.description}">
 <meta name="twitter:image" content="${data.imageUrl}">
+<meta name="twitter:image:width" content="1200">
+<meta name="twitter:image:height" content="630">
 
 <link rel="canonical" href="${data.pageUrl}">
 <style>
