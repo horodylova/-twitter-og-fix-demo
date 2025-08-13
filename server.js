@@ -7,29 +7,20 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- helpers
 function isTwitterBot(userAgent = '') {
   return /twitterbot/i.test(userAgent);
 }
-function getBaseUrl() {
-  const port = process.env.PORT || 3000;
-  return process.env.BASE_URL ||
-         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${port}`);
-}
 
-// --- static
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
   immutable: true,
   maxAge: '31536000',
   setHeaders(res) {
-    // стабильная и быстрая отдача og:image
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   }
 }));
 app.use(express.static('public'));
 app.use(express.json());
 
-// --- API: create post (твоя логика)
 app.post('/api/create-post', async (req, res) => {
   try {
     const generator = new StaticHTMLGenerator();
@@ -41,7 +32,6 @@ app.post('/api/create-post', async (req, res) => {
   }
 });
 
-// --- dynamic post page (добавлены только заголовки кеша и Vary)
 app.get('/post/:id', async (req, res) => {
   try {
     const ua = req.get('User-Agent') || '';
@@ -56,10 +46,9 @@ app.get('/post/:id', async (req, res) => {
     const result = await generator.generatePost();
 
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Vary', 'User-Agent'); // важно: разделяет кеш для бота и людей
+    res.set('Vary', 'User-Agent');
 
     if (bot) {
-      // бот всегда получает свежие мета-теги
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     } else {
       res.set('Cache-Control', 'public, max-age=60');
@@ -72,42 +61,10 @@ app.get('/post/:id', async (req, res) => {
   }
 });
 
-// --- sitemap.xml (без кэша, без примеров; отдаем только корень)
-app.get('/sitemap.xml', (req, res) => {
-  try {
-    const baseUrl = getBaseUrl();
-    const now = new Date().toISOString();
-
-    // Для отладки и простоты: включаем только корневую страницу.
-    // При желании позже можно подставлять сюда созданные URL.
-    const urls = [ `${baseUrl}/` ];
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(u => `
-  <url>
-    <loc>${u}</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>`).join('\n')}
-</urlset>`;
-
-    res.set('Content-Type', 'application/xml; charset=utf-8');
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.status(200).send(xml);
-  } catch (e) {
-    res.status(500).send('');
-  }
-});
-
-// --- home (твоя разметка как есть)
 app.get('/', (req, res) => {
-  const baseUrl = getBaseUrl();
-
   res.send(`
-  <!DOCTYPE html>
-  <html>
+    <!DOCTYPE html>
+    <html>
   <head>
       <title>🐦 Twitter Card Demo</title>
       <meta charset="utf-8" />
@@ -174,6 +131,8 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
+
 
 
 
