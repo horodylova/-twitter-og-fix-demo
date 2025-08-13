@@ -22,7 +22,13 @@ return botPatterns.some(pattern => pattern.test(userAgent));
 
 
 
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+  immutable: true,
+  maxAge: '31536000',
+  setHeaders(res) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
 app.use(express.static('public'));
 app.use(express.json());
 
@@ -44,28 +50,31 @@ try {
 
 
 app.get('/post/:id', async (req, res) => {
- try {
-   const userAgent = req.get('User-Agent') || '';
-   const isBot = isTwitterBot(userAgent);
-  
-   const parts = req.params.id.split('-');
-  
-   const slug = parts[0] || 'default';
-   const username = parts[1] || 'user';
-   const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
-  
-   const generator = new StaticHTMLGenerator({ slug, username, imageId });
-   const result = await generator.generatePost();
-  
-   res.set({
-     'Content-Type': 'text/html; charset=utf-8'
-   });
-  
-   res.send(result.html);
- } catch (error) {
-   console.error('Error fetching post:', error);
-   res.status(500).send('Error loading post');
- }
+  try {
+    const userAgent = req.get('User-Agent') || '';
+    const isBot = /twitterbot/i.test(userAgent);
+
+    const parts = req.params.id.split('-');
+    const slug = parts[0] || 'default';
+    const username = parts[1] || 'user';
+    const imageId = parts.length > 2 ? parts.slice(2).join('-') : '1';
+
+    const generator = new StaticHTMLGenerator({ slug, username, imageId });
+    const result = await generator.generatePost();
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Vary', 'User-Agent'); 
+    if (isBot) {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    } else {
+      res.set('Cache-Control', 'public, max-age=60');
+    }
+
+    res.send(result.html);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).send('Error loading post');
+  }
 });
 
 
