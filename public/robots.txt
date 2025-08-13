@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /post/
+Allow: /images/
+
+Sitemap: https://twitter-og-fix-demo.vercel.app/sitemap.xml
+Host: twitter-og-fix-demo.vercel.app
+
+User-agent: Twitterbot
+Allow: /
