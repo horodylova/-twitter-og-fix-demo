@@ -1,9 +1,3 @@
-const fs = require('fs').promises;
-const path = require('path');
-
-
-
-
 class StaticHTMLGenerator {
 constructor(options = {}) {
   const PORT = process.env.PORT || 3000;
@@ -13,9 +7,6 @@ constructor(options = {}) {
   this.username = options.username || null;
   this.imageId = options.imageId || '1';
 }
-
-
-
 
 getDynamicImageUrl() {
   try {
@@ -38,8 +29,6 @@ getDynamicImageUrl() {
 }
 
 
-
-
 generateDynamicUrl() {
   try {
     if (this.slug && this.username && this.imageId) {
@@ -50,8 +39,6 @@ generateDynamicUrl() {
     return `${this.baseUrl}/post`;
   }
 }
-
-
 
 
 async generatePost() {
@@ -73,8 +60,6 @@ async generatePost() {
 }
 
 
-
-
 async generateRandomPost() {
   try {
     const randomSlug = this.generateRandomSlug();
@@ -92,8 +77,6 @@ async generateRandomPost() {
 }
 
 
-
-
 generateRandomSlug() {
   const slugs = [
     'amazing-offer',
@@ -106,9 +89,6 @@ generateRandomSlug() {
   return slugs[Math.floor(Math.random() * slugs.length)];
 }
 
-
-
-
 generateRandomUsername() {
   const usernames = [
     'user123',
@@ -120,9 +100,6 @@ generateRandomUsername() {
   return usernames[Math.floor(Math.random() * usernames.length)];
 }
 
-
-
-
 getPageData() {
   const pageUrl = this.generateDynamicUrl();
   const imageUrl = this.getDynamicImageUrl();
@@ -133,9 +110,6 @@ getPageData() {
     pageUrl
   };
 }
-
-
-
 
 buildHTML(data) {
   return `<!DOCTYPE html>
@@ -230,8 +204,6 @@ buildHTML(data) {
 </html>`;
 }
 }
-
-
 
 
 module.exports = StaticHTMLGenerator;

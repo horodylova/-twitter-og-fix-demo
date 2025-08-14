@@ -1,5 +1,4 @@
-// server.js
-const express = require('express');
+ const express = require('express');
 const path = require('path');
 const StaticHTMLGenerator = require('./utils/static-html-generator');
 require('dotenv').config();
@@ -11,7 +10,13 @@ function isTwitterBot(userAgent = '') {
   return /twitterbot/i.test(userAgent);
 }
 
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/images', express.static(path.join(__dirname, 'public/images'), {
+  immutable: true,
+  maxAge: '31536000',
+  setHeaders(res) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
 app.use(express.static('public'));
 app.use(express.json());
 
